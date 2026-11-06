@@ -1,0 +1,398 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Hardened Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'cyriljustin225@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Entity Validation Blueprints (Synced with firebase-blueprint.json)
+    function isValidAdminRecord(data) {
+      return data.keys().hasAll(['uid', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'createdAt']) &&
+        data.uid is string &&
+        data.uid.size() >= 1 &&
+        data.uid.size() <= 128 &&
+        data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+          'uid',
+          'displayName',
+          'role',
+          'department',
+          'badgeCode',
+          'language',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'displayName',
+          'role',
+          'department',
+          'badgeCode',
+          'language',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.uid is string &&
+        data.uid.size() >= 1 &&
+        data.uid.size() <= 128 &&
+        data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == request.auth.uid &&
+        data.displayName is string &&
+        data.displayName.size() >= 1 &&
+        data.displayName.size() <= 100 &&
+        data.role is string &&
+        data.role in ['Admin', 'Faculty', 'Staff', 'Student'] &&
+        data.department is string &&
+        data.department.size() >= 1 &&
+        data.department.size() <= 120 &&
+        data.badgeCode is string &&
+        data.badgeCode.size() >= 1 &&
+        data.badgeCode.size() <= 64 &&
+        data.badgeCode.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.language is string &&
+        data.language in ['en', 'fil'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTermCourse(data) {
+      return data.keys().hasAll([
+          'ownerId',
+          'academicTerm',
+          'courseCode',
+          'courseTitle',
+          'department',
+          'instructorName',
+          'enrolledStudents',
+          'scheduleDays',
+          'startTime',
+          'endTime',
+          'constantRoomId',
+          'relocatedRoomId',
+          'relocatedDate',
+          'relocationReason',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId',
+          'academicTerm',
+          'courseCode',
+          'courseTitle',
+          'department',
+          'instructorName',
+          'enrolledStudents',
+          'scheduleDays',
+          'startTime',
+          'endTime',
+          'constantRoomId',
+          'relocatedRoomId',
+          'relocatedDate',
+          'relocationReason',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.ownerId is string &&
+        data.ownerId.size() >= 1 &&
+        data.ownerId.size() <= 128 &&
+        data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.academicTerm is string &&
+        data.academicTerm.size() >= 1 &&
+        data.academicTerm.size() <= 80 &&
+        data.courseCode is string &&
+        data.courseCode.size() >= 2 &&
+        data.courseCode.size() <= 32 &&
+        data.courseCode.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.courseTitle is string &&
+        data.courseTitle.size() >= 2 &&
+        data.courseTitle.size() <= 160 &&
+        data.department is string &&
+        data.department.size() >= 2 &&
+        data.department.size() <= 120 &&
+        data.instructorName is string &&
+        data.instructorName.size() >= 2 &&
+        data.instructorName.size() <= 100 &&
+        data.enrolledStudents is int &&
+        data.enrolledStudents >= 1 &&
+        data.enrolledStudents <= 1000 &&
+        data.scheduleDays is string &&
+        data.scheduleDays in ['MWF', 'TTh', 'Sat'] &&
+        data.startTime is string &&
+        data.startTime.size() >= 4 &&
+        data.startTime.size() <= 10 &&
+        data.endTime is string &&
+        data.endTime.size() >= 4 &&
+        data.endTime.size() <= 10 &&
+        data.constantRoomId is string &&
+        data.constantRoomId.size() >= 2 &&
+        data.constantRoomId.size() <= 64 &&
+        data.constantRoomId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.relocatedRoomId is string &&
+        data.relocatedRoomId.size() <= 64 &&
+        data.relocatedDate is string &&
+        data.relocatedDate.size() <= 32 &&
+        data.relocationReason is string &&
+        data.relocationReason.size() <= 240 &&
+        data.status is string &&
+        data.status in ['active', 'relocated', 'archived'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidBooking(data) {
+      return data.keys().hasAll([
+          'ownerId',
+          'resourceType',
+          'bookingSubtype',
+          'targetId',
+          'targetName',
+          'title',
+          'category',
+          'requesterName',
+          'department',
+          'date',
+          'startTime',
+          'endTime',
+          'attendees',
+          'status',
+          'costPhp',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId',
+          'resourceType',
+          'bookingSubtype',
+          'targetId',
+          'targetName',
+          'title',
+          'category',
+          'requesterName',
+          'department',
+          'date',
+          'startTime',
+          'endTime',
+          'attendees',
+          'status',
+          'costPhp',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.ownerId is string &&
+        data.ownerId.size() >= 1 &&
+        data.ownerId.size() <= 128 &&
+        data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerId == request.auth.uid &&
+        data.resourceType is string &&
+        data.resourceType in ['Room', 'Equipment', 'Event'] &&
+        data.bookingSubtype is string &&
+        data.bookingSubtype in ['Ad-Hoc Reservation', 'Course Room Relocation', 'Campus Event', 'Equipment Loan'] &&
+        data.targetId is string &&
+        data.targetId.size() >= 1 &&
+        data.targetId.size() <= 64 &&
+        data.targetId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.targetName is string &&
+        data.targetName.size() >= 1 &&
+        data.targetName.size() <= 140 &&
+        data.title is string &&
+        data.title.size() >= 2 &&
+        data.title.size() <= 160 &&
+        data.category is string &&
+        data.category in [
+          'Academic Class',
+          'Make-Up / Relocation',
+          'Seminar & Symposium',
+          'Club Activity',
+          'Student Study',
+          'Lab Research',
+          'Sports Tournament'
+        ] &&
+        data.requesterName is string &&
+        data.requesterName.size() >= 1 &&
+        data.requesterName.size() <= 100 &&
+        data.department is string &&
+        data.department.size() >= 1 &&
+        data.department.size() <= 120 &&
+        data.date is string &&
+        data.date.size() >= 8 &&
+        data.date.size() <= 20 &&
+        data.startTime is string &&
+        data.startTime.size() >= 4 &&
+        data.startTime.size() <= 10 &&
+        data.endTime is string &&
+        data.endTime.size() >= 4 &&
+        data.endTime.size() <= 10 &&
+        data.attendees is int &&
+        data.attendees >= 1 &&
+        data.attendees <= 5000 &&
+        data.status is string &&
+        data.status in ['Approved', 'Pending Approval', 'Rejected', 'Completed'] &&
+        data.costPhp is number &&
+        data.costPhp >= 0 &&
+        data.costPhp <= 1000000 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // Collection 1: /admins/{adminId}
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && isValidId(adminId) && (request.auth.uid == adminId || isAdmin());
+      allow list: if false;
+      allow create: if isSignedIn() && isValidId(adminId) && isValidAdminRecord(incoming()) && incoming().createdAt == request.time && isAdmin();
+      allow update: if false;
+      allow delete: if isSignedIn() && isValidId(adminId) && isAdmin();
+    }
+
+    // Collection 2: /users/{userId}
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if false;
+      allow create: if isSignedIn() &&
+        isValidId(userId) &&
+        isOwner(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (incoming().role != 'Admin' || isAdmin());
+      allow update: if isSignedIn() &&
+        isValidId(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() || (
+            isOwner(userId) &&
+            incoming().role == existing().role &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'displayName',
+              'department',
+              'badgeCode',
+              'language',
+              'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isSignedIn() && isValidId(userId) && isAdmin();
+    }
+
+    // Collection 3: /termCourses/{courseId}
+    match /termCourses/{courseId} {
+      allow get: if isSignedIn() && isValidId(courseId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().ownerId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() &&
+        isValidId(courseId) &&
+        isValidTermCourse(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/users/$(incoming().ownerId));
+      allow update: if isSignedIn() &&
+        isValidId(courseId) &&
+        isValidTermCourse(incoming()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() || (
+            existing().ownerId == request.auth.uid &&
+            existing().status != 'archived' && (
+              // Action 1: Admin/Owner Constant Room Update
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'constantRoomId',
+                'relocatedRoomId',
+                'relocatedDate',
+                'relocationReason',
+                'status',
+                'updatedAt'
+              ]) ||
+              // Action 2: Course Metadata Edit
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'courseTitle',
+                'instructorName',
+                'enrolledStudents',
+                'scheduleDays',
+                'startTime',
+                'endTime',
+                'updatedAt'
+              ])
+            )
+          )
+        );
+      allow delete: if isSignedIn() && isValidId(courseId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    // Collection 4: /bookings/{bookingId}
+    match /bookings/{bookingId} {
+      allow get: if isSignedIn() && isValidId(bookingId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().ownerId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() &&
+        isValidId(bookingId) &&
+        isValidBooking(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/users/$(incoming().ownerId));
+      allow update: if isSignedIn() &&
+        isValidId(bookingId) &&
+        isValidBooking(incoming()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() || (
+            existing().ownerId == request.auth.uid &&
+            existing().status != 'Completed' &&
+            existing().status != 'Rejected' && (
+              // Action 1: Workflow Status Transition
+              incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']) ||
+              // Action 2: Reschedule / Venue Update
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'targetId',
+                'targetName',
+                'date',
+                'startTime',
+                'endTime',
+                'attendees',
+                'updatedAt'
+              ])
+            )
+          )
+        );
+      allow delete: if isSignedIn() && isValidId(bookingId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+  }
+}

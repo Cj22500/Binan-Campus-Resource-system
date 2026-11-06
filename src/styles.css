@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Outlined|Material+Icons');
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-sans: 'Public Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --radius-control: 6px;
+    --radius-panel: 8px;
+    --bg-canvas: #F7F9F8;
+    --bg-surface: #FFFFFF;
+    --bg-subtle: #E8F3EC;
+    --border-hairline: #DDE5E0;
+    --text-primary: #14201A;
+    --text-secondary: #4B5A52;
+    --text-muted: #4B5A52;
+    --accent-primary: #1B7F4B;
+    --accent-hover: #16683D;
+    --accent-subtle: #E8F3EC;
+    --focus-ring: #1B7F4B;
+  }
+
+  .dark {
+    --bg-canvas: #121815;
+    --bg-surface: #19221D;
+    --bg-subtle: #1C2E24;
+    --border-hairline: #29382F;
+    --text-primary: #EDF3EE;
+    --text-secondary: #A3B3A9;
+    --text-muted: #A3B3A9;
+    --accent-primary: #34D399;
+    --accent-hover: #10B981;
+    --accent-subtle: #1C2E24;
+    --focus-ring: #34D399;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-sans);
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* WCAG 2.1 AA visible 2px focus ring on all interactive elements */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--focus-ring) !important;
+    outline-offset: 2px !important;
+  }
+}
+
+/* Honor OS prefers-reduced-motion as well as in-app toggle */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html.a11y-large-text {
+  font-size: 112.5%;
+}
+
+html.a11y-reduced-motion *,
+html.a11y-reduced-motion *::before,
+html.a11y-reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+html.a11y-high-contrast {
+  filter: contrast(1.15);
+}

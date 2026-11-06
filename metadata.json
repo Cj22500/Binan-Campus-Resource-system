@@ -1,0 +1,6 @@
+{
+  "name": "Biñan Campus Resource Management System",
+  "description": "Enterprise Campus Resource Management System (CRMS) for Biñan campus students, faculty, staff, and administration featuring term course room scheduling, smart room relocation, 2D SVG digital twin with IoT controls, equipment lifecycle tracking, and RA 10173 compliance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,366 @@
+{
+  "entities": {
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Trusted administrator registry document keyed by user UID.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Administrator Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when admin record was created."
+        }
+      },
+      "required": ["uid", "createdAt"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated campus user profile and workspace preferences without raw PII.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Campus user display name.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "role": {
+          "type": "string",
+          "description": "Campus RBAC role.",
+          "enum": ["Admin", "Faculty", "Staff", "Student"]
+        },
+        "department": {
+          "type": "string",
+          "description": "Assigned academic college or administrative unit.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "badgeCode": {
+          "type": "string",
+          "description": "Assigned RFID or QR badge identifier.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "language": {
+          "type": "string",
+          "description": "Preferred UI language code.",
+          "enum": ["en", "fil"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Immutable creation server timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp."
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "role",
+        "department",
+        "badgeCode",
+        "language",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TermCourseDoc": {
+      "title": "TermCourseDoc",
+      "description": "Standing term course constant room assignment and teacher relocation override state.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the user who owns this campus workspace record.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "academicTerm": {
+          "type": "string",
+          "description": "Academic term label.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "courseCode": {
+          "type": "string",
+          "description": "Course code identifier.",
+          "minLength": 2,
+          "maxLength": 32,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "courseTitle": {
+          "type": "string",
+          "description": "Full subject or course title.",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "department": {
+          "type": "string",
+          "description": "Academic department offering the course.",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "instructorName": {
+          "type": "string",
+          "description": "Assigned faculty instructor name.",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "enrolledStudents": {
+          "type": "integer",
+          "description": "Number of students enrolled in the section."
+        },
+        "scheduleDays": {
+          "type": "string",
+          "description": "Recurring weekly schedule pattern.",
+          "enum": ["MWF", "TTh", "Sat"]
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Class start time in HH:MM format.",
+          "minLength": 4,
+          "maxLength": 10
+        },
+        "endTime": {
+          "type": "string",
+          "description": "Class end time in HH:MM format.",
+          "minLength": 4,
+          "maxLength": 10
+        },
+        "constantRoomId": {
+          "type": "string",
+          "description": "Standard assigned room ID for the term.",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "relocatedRoomId": {
+          "type": "string",
+          "description": "Temporary alternate room ID when constant room is unavailable.",
+          "minLength": 0,
+          "maxLength": 64
+        },
+        "relocatedDate": {
+          "type": "string",
+          "description": "Date of temporary room relocation.",
+          "minLength": 0,
+          "maxLength": 32
+        },
+        "relocationReason": {
+          "type": "string",
+          "description": "Reason why the teacher relocated the session.",
+          "minLength": 0,
+          "maxLength": 240
+        },
+        "status": {
+          "type": "string",
+          "description": "Course scheduling lifecycle state.",
+          "enum": ["active", "relocated", "archived"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last modification."
+        }
+      },
+      "required": [
+        "ownerId",
+        "academicTerm",
+        "courseCode",
+        "courseTitle",
+        "department",
+        "instructorName",
+        "enrolledStudents",
+        "scheduleDays",
+        "startTime",
+        "endTime",
+        "constantRoomId",
+        "relocatedRoomId",
+        "relocatedDate",
+        "relocationReason",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "BookingDoc": {
+      "title": "BookingDoc",
+      "description": "Campus room reservation, course relocation booking, equipment loan, or event schedule.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the user who created or owns this booking.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "resourceType": {
+          "type": "string",
+          "description": "Type of campus resource reserved.",
+          "enum": ["Room", "Equipment", "Event"]
+        },
+        "bookingSubtype": {
+          "type": "string",
+          "description": "Subtype classification of the reservation.",
+          "enum": ["Ad-Hoc Reservation", "Course Room Relocation", "Campus Event", "Equipment Loan"]
+        },
+        "targetId": {
+          "type": "string",
+          "description": "Identifier of the target room or equipment asset.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "targetName": {
+          "type": "string",
+          "description": "Display name of the reserved room or asset.",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "title": {
+          "type": "string",
+          "description": "Reservation or event title.",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "category": {
+          "type": "string",
+          "description": "Booking purpose category.",
+          "enum": [
+            "Academic Class",
+            "Make-Up / Relocation",
+            "Seminar & Symposium",
+            "Club Activity",
+            "Student Study",
+            "Lab Research",
+            "Sports Tournament"
+          ]
+        },
+        "requesterName": {
+          "type": "string",
+          "description": "Name of the requester.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "department": {
+          "type": "string",
+          "description": "Department or student organization.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "date": {
+          "type": "string",
+          "description": "Reservation date YYYY-MM-DD.",
+          "minLength": 8,
+          "maxLength": 20
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Start time HH:MM.",
+          "minLength": 4,
+          "maxLength": 10
+        },
+        "endTime": {
+          "type": "string",
+          "description": "End time HH:MM.",
+          "minLength": 4,
+          "maxLength": 10
+        },
+        "attendees": {
+          "type": "integer",
+          "description": "Expected headcount."
+        },
+        "status": {
+          "type": "string",
+          "description": "Approval workflow status.",
+          "enum": ["Approved", "Pending Approval", "Rejected", "Completed"]
+        },
+        "costPhp": {
+          "type": "number",
+          "description": "Resource usage cost in PHP."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Immutable creation server timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "resourceType",
+        "bookingSubtype",
+        "targetId",
+        "targetName",
+        "title",
+        "category",
+        "requesterName",
+        "department",
+        "date",
+        "startTime",
+        "endTime",
+        "attendees",
+        "status",
+        "costPhp",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": {
+        "$ref": "#/entities/AdminRecord"
+      },
+      "description": "Trusted administrator lookup collection."
+    },
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Authenticated user profile and RBAC role settings keyed by UID."
+    },
+    "/termCourses/{courseId}": {
+      "schema": {
+        "$ref": "#/entities/TermCourseDoc"
+      },
+      "description": "Term-long course room assignments and temporary teacher room relocations."
+    },
+    "/bookings/{bookingId}": {
+      "schema": {
+        "$ref": "#/entities/BookingDoc"
+      },
+      "description": "Room reservations, course relocations, equipment loans, and campus events."
+    }
+  }
+}

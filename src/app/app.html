@@ -1,0 +1,1735 @@
+<div class="min-h-[100dvh] flex flex-col bg-[#F7F9F8] dark:bg-[#121815] text-[#14201A] dark:text-[#EDF3EE]">
+  <!-- Keyboard Accessibility Skip Link -->
+  <a
+    href="#main-workspace"
+    class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-3 focus:py-2 focus:bg-[#1B7F4B] focus:text-white focus:rounded-[6px] focus:text-xs focus:font-semibold"
+  >
+    Skip to main workspace
+  </a>
+
+  <!-- Persistent Top Bar: Wordmark | Global Search | Role Switcher + Single Primary Action -->
+  <header class="sticky top-0 z-30 flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 lg:px-6 h-14 bg-white dark:bg-[#19221D] border-b border-[#DDE5E0] dark:border-[#29382F]">
+    <!-- Left: Sidebar Collapse Toggle (Desktop/Tablet only) + Campus Identity -->
+    <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+      <button
+        type="button"
+        (click)="crms.sidebarCollapsed.set(!crms.sidebarCollapsed())"
+        class="hidden md:inline-flex p-1.5 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] bg-[#F7F9F8] dark:bg-[#121815] text-[#14201A] dark:text-[#EDF3EE] hover:border-[#1B7F4B]"
+        [attr.aria-label]="crms.sidebarCollapsed() ? 'Expand navigation sidebar' : 'Collapse navigation sidebar'"
+        [attr.aria-expanded]="!crms.sidebarCollapsed()"
+      >
+        <mat-icon class="!w-4 !h-4 !text-[16px]">
+          {{ crms.sidebarCollapsed() ? 'menu' : 'menu_open' }}
+        </mat-icon>
+      </button>
+
+      <a
+        href="#overview"
+        (click)="$event.preventDefault(); setModule('overview')"
+        class="flex items-center gap-2 text-sm font-bold tracking-tight text-[#14201A] dark:text-[#EDF3EE] whitespace-nowrap shrink-0"
+      >
+        <div class="w-6 h-6 rounded-[5px] bg-[#1B7F4B] text-white flex items-center justify-center shrink-0 font-bold text-xs shadow-xs">
+          B
+        </div>
+        <!-- Short name on phone, full name on sm+ -->
+        <span class="sm:hidden">Biñan CRMS</span>
+        <span class="hidden sm:inline">Biñan Campus Resource System</span>
+        <span class="hidden xl:inline-block font-mono text-[11px] font-normal text-[#4B5A52] dark:text-[#A3B3A9] pl-2 border-l border-[#DDE5E0] dark:border-[#29382F]">
+          {{ crms.currentTerm() }}
+        </span>
+      </a>
+    </div>
+
+    <!-- Center: Global Search across Rooms, Courses, and Equipment (Hidden on mobile, uses full-width expander) -->
+    <div class="relative flex-1 max-w-md hidden sm:block">
+      <label for="global-crms-search" class="sr-only">Search rooms, courses, or equipment</label>
+      <div class="relative flex items-center">
+        <mat-icon class="!w-4 !h-4 !text-[16px] text-[#4B5A52] dark:text-[#A3B3A9] absolute left-3 pointer-events-none">
+          search
+        </mat-icon>
+        <input
+          id="global-crms-search"
+          type="search"
+          [value]="crms.globalSearchQuery()"
+          (input)="onGlobalSearchInput($event)"
+          (focus)="searchDropdownOpen.set(crms.globalSearchQuery().trim().length > 1)"
+          placeholder="Search rooms, courses, or equipment..."
+          class="w-full pl-9 pr-8 py-1.5 text-xs rounded-[6px] bg-[#F7F9F8] dark:bg-[#121815] border border-[#DDE5E0] dark:border-[#29382F] text-[#14201A] dark:text-[#EDF3EE] placeholder:text-[#4B5A52] dark:placeholder:text-[#A3B3A9]"
+        />
+        @if (crms.globalSearchQuery()) {
+          <button
+            type="button"
+            (click)="clearGlobalSearch()"
+            aria-label="Clear global search"
+            class="absolute right-2 text-[#4B5A52] hover:text-[#14201A] dark:hover:text-white"
+          >
+            <mat-icon class="!w-3.5 !h-3.5 !text-[14px]">close</mat-icon>
+          </button>
+        }
+      </div>
+
+      @if (searchDropdownOpen() && crms.globalSearchResults().length > 0) {
+        <div
+          role="listbox"
+          aria-label="Global search results"
+          class="absolute left-0 right-0 mt-1 bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] rounded-[8px] shadow-md z-50 divide-y divide-[#DDE5E0] dark:divide-[#29382F] overflow-hidden"
+        >
+          @for (item of crms.globalSearchResults(); track item.id) {
+            <button
+              type="button"
+              (click)="selectSearchResult(item)"
+              class="w-full px-3.5 py-2.5 text-left hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] flex items-center justify-between gap-3 text-xs"
+            >
+              <div class="truncate">
+                <div class="font-semibold text-[#14201A] dark:text-[#EDF3EE] truncate">{{ item.label }}</div>
+                <div class="text-[11px] font-mono text-[#4B5A52] dark:text-[#A3B3A9] truncate">{{ item.meta }}</div>
+              </div>
+              <span class="font-mono text-[10px] px-2 py-0.5 rounded-[4px] bg-[#F7F9F8] dark:bg-[#121815] text-[#4B5A52] dark:text-[#A3B3A9] shrink-0">
+                {{ item.module }}
+              </span>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Right Controls: Mobile Search Toggle + Account + Single Primary CTA -->
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <!-- Mobile Search Icon Button (Expands full-width search on phone) -->
+      <button
+        type="button"
+        (click)="mobileSearchOpen.set(!mobileSearchOpen())"
+        [attr.aria-expanded]="mobileSearchOpen()"
+        aria-label="Toggle mobile search"
+        class="sm:hidden min-h-[44px] min-w-[44px] p-2 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] bg-white dark:bg-[#19221D] text-[#14201A] dark:text-[#EDF3EE] flex items-center justify-center hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24]"
+      >
+        <mat-icon class="!w-5 !h-5 !text-[20px]">
+          {{ mobileSearchOpen() ? 'close' : 'search' }}
+        </mat-icon>
+      </button>
+
+      <!-- Desktop Text Link to Open CRMS Guide -->
+      <button
+        type="button"
+        (click)="crms.guideOpen.set(!crms.guideOpen())"
+        class="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#4B5A52] dark:text-[#A3B3A9] hover:text-[#14201A] dark:hover:text-[#EDF3EE] rounded-[6px] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] transition-colors"
+      >
+        <mat-icon class="!w-4 !h-4 !text-[16px]">help_outline</mat-icon>
+        <span>Guide</span>
+      </button>
+
+      <!-- Desktop Role Switcher: Subtle Tint for Active Role -->
+      <div
+        role="group"
+        aria-label="Active campus role"
+        class="hidden md:flex items-center p-0.5 rounded-[6px] bg-[#F7F9F8] dark:bg-[#121815] border border-[#DDE5E0] dark:border-[#29382F]"
+      >
+        @for (r of roles; track r) {
+          <button
+            type="button"
+            (click)="setRole(r)"
+            class="px-2.5 py-1 text-xs font-medium rounded-[5px] whitespace-nowrap transition-colors"
+            [class.bg-[#E8F3EC]]="crms.activeRole() === r && !crms.darkMode()"
+            [class.text-[#1B7F4B]]="crms.activeRole() === r && !crms.darkMode()"
+            [class.dark:bg-[#1C2E24]]="crms.activeRole() === r && crms.darkMode()"
+            [class.dark:text-[#34D399]]="crms.activeRole() === r && crms.darkMode()"
+            [class.font-semibold]="crms.activeRole() === r"
+            [class.text-[#4B5A52]]="crms.activeRole() !== r && !crms.darkMode()"
+            [class.dark:text-[#A3B3A9]]="crms.activeRole() !== r && crms.darkMode()"
+          >
+            {{ r }}
+          </button>
+        }
+      </div>
+
+      <!-- Account Menu Dropdown (Full name, role switcher on mobile, theme toggle on mobile, sign out) -->
+      <div class="relative">
+        <button
+          type="button"
+          (click)="accountMenuOpen.set(!accountMenuOpen())"
+          [attr.aria-expanded]="accountMenuOpen()"
+          aria-label="Campus account"
+          class="min-h-[44px] px-2 sm:px-2.5 py-1 text-xs font-medium rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] bg-white dark:bg-[#19221D] text-[#14201A] dark:text-[#EDF3EE] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] flex items-center gap-1.5"
+        >
+          <mat-icon class="!w-4 !h-4 !text-[16px] text-[#1B7F4B]">account_circle</mat-icon>
+          <span class="hidden sm:inline font-medium whitespace-nowrap">{{ crms.activePersona().name }}</span>
+          <mat-icon class="!w-3 !h-3 !text-[12px] text-[#4B5A52] dark:text-[#A3B3A9]">arrow_drop_down</mat-icon>
+        </button>
+
+        @if (accountMenuOpen()) {
+          <div
+            role="menu"
+            class="absolute right-0 mt-1 w-72 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] rounded-[8px] shadow-lg p-3.5 z-50 text-xs space-y-3"
+          >
+            <div class="space-y-0.5">
+              <div class="font-bold text-[#14201A] dark:text-[#EDF3EE]">{{ crms.activePersona().name }}</div>
+              <div class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">{{ crms.activePersona().title }} · {{ crms.activePersona().department }}</div>
+              <div class="text-[11px] font-mono text-[#4B5A52] dark:text-[#A3B3A9] pt-1">{{ crms.activePersona().badgeCode }}</div>
+            </div>
+
+            <!-- Role Switcher on Narrow Screens (Mobile) -->
+            <div class="md:hidden pt-2 border-t border-[#DDE5E0] dark:border-[#29382F] space-y-1.5">
+              <span class="text-[11px] font-semibold text-[#4B5A52] dark:text-[#A3B3A9]">Preview role</span>
+              <div class="grid grid-cols-2 gap-1">
+                @for (r of roles; track r) {
+                  <button
+                    type="button"
+                    (click)="setRole(r); accountMenuOpen.set(false)"
+                    class="min-h-[36px] px-2 py-1 text-xs font-medium rounded-[5px] border border-[#DDE5E0] dark:border-[#29382F] transition-colors"
+                    [class.bg-[#E8F3EC]]="crms.activeRole() === r && !crms.darkMode()"
+                    [class.text-[#1B7F4B]]="crms.activeRole() === r && !crms.darkMode()"
+                    [class.dark:bg-[#1C2E24]]="crms.activeRole() === r && crms.darkMode()"
+                    [class.dark:text-[#34D399]]="crms.activeRole() === r && crms.darkMode()"
+                    [class.font-semibold]="crms.activeRole() === r"
+                  >
+                    {{ r }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Theme Toggle on Narrow Screens -->
+            <div class="sm:hidden pt-2 border-t border-[#DDE5E0] dark:border-[#29382F] flex items-center justify-between">
+              <span class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">Appearance</span>
+              <button
+                type="button"
+                (click)="crms.darkMode.set(!crms.darkMode())"
+                class="min-h-[36px] px-2.5 py-1 rounded-[5px] border border-[#DDE5E0] dark:border-[#29382F] text-xs font-medium flex items-center gap-1.5"
+              >
+                <mat-icon class="!w-3.5 !h-3.5 !text-[14px]">
+                  {{ crms.darkMode() ? 'light_mode' : 'dark_mode' }}
+                </mat-icon>
+                <span>{{ crms.darkMode() ? 'Light theme' : 'Dark theme' }}</span>
+              </button>
+            </div>
+
+            <!-- Guide Link on Narrow Screens -->
+            <div class="lg:hidden pt-2 border-t border-[#DDE5E0] dark:border-[#29382F]">
+              <button
+                type="button"
+                (click)="crms.guideOpen.set(true); accountMenuOpen.set(false)"
+                class="w-full min-h-[36px] px-2.5 py-1 text-xs font-medium rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] text-[#14201A] dark:text-[#EDF3EE] flex items-center justify-center gap-1.5"
+              >
+                <mat-icon class="!w-3.5 !h-3.5 !text-[14px]">help_outline</mat-icon>
+                <span>Ask CRMS guide</span>
+              </button>
+            </div>
+
+            <div class="pt-2 border-t border-[#DDE5E0] dark:border-[#29382F]">
+              <button
+                type="button"
+                (click)="crms.signOutFirebase(); accountMenuOpen.set(false)"
+                class="w-full min-h-[36px] px-2.5 py-1.5 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] bg-white dark:bg-[#19221D] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] text-[#14201A] dark:text-[#EDF3EE] font-medium flex items-center justify-center gap-1.5 text-xs"
+              >
+                <mat-icon class="!w-3.5 !h-3.5 !text-[14px]">logout</mat-icon>
+                <span>Sign out</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Desktop Theme Toggle -->
+      <button
+        type="button"
+        (click)="crms.darkMode.set(!crms.darkMode())"
+        [attr.aria-label]="crms.darkMode() ? 'Switch to light theme' : 'Switch to dark theme'"
+        class="hidden sm:inline-flex min-h-[44px] min-w-[44px] p-2 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] bg-white dark:bg-[#19221D] text-[#14201A] dark:text-[#EDF3EE] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] items-center justify-center"
+      >
+        <mat-icon class="!w-4 !h-4 !text-[16px]">
+          {{ crms.darkMode() ? 'light_mode' : 'dark_mode' }}
+        </mat-icon>
+      </button>
+
+      <!-- The Single Primary Green Action per Screen: Full on sm+, Compact 44x44 on mobile -->
+      <button
+        type="button"
+        (click)="openBookingWizard()"
+        class="min-h-[44px] px-3 sm:px-3.5 py-2 text-xs font-semibold text-white bg-[#1B7F4B] hover:bg-[#16683D] rounded-[6px] whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+      >
+        <mat-icon class="!w-4 !h-4 !text-[16px]">add</mat-icon>
+        <span class="hidden sm:inline">Reserve room</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Full-Width Mobile Expandable Search Bar (when active on phone) -->
+  @if (mobileSearchOpen()) {
+    <div class="sm:hidden px-3 py-2 bg-white dark:bg-[#19221D] border-b border-[#DDE5E0] dark:border-[#29382F] shadow-sm">
+      <div class="relative flex items-center">
+        <mat-icon class="!w-4 !h-4 !text-[16px] text-[#4B5A52] dark:text-[#A3B3A9] absolute left-3 pointer-events-none">
+          search
+        </mat-icon>
+        <input
+          type="search"
+          [value]="crms.globalSearchQuery()"
+          (input)="onGlobalSearchInput($event)"
+          (focus)="searchDropdownOpen.set(crms.globalSearchQuery().trim().length > 1)"
+          placeholder="Search rooms, courses, equipment..."
+          class="w-full pl-9 pr-9 py-2 text-base rounded-[6px] bg-[#F7F9F8] dark:bg-[#121413] border border-[#DDE5E0] dark:border-[#29382F] text-[#14201A] dark:text-[#EDF3EE] placeholder:text-[#4B5A52] focus:outline-none focus:border-[#1B7F4B]"
+        />
+        <button
+          type="button"
+          (click)="mobileSearchOpen.set(false)"
+          aria-label="Close search"
+          class="absolute right-2 text-[#4B5A52] min-h-[36px] min-w-[36px] flex items-center justify-center"
+        >
+          <mat-icon class="!w-4 !h-4 !text-[16px]">close</mat-icon>
+        </button>
+      </div>
+
+      @if (searchDropdownOpen() && crms.globalSearchResults().length > 0) {
+        <div
+          role="listbox"
+          aria-label="Mobile global search results"
+          class="mt-2 bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] rounded-[8px] shadow-lg divide-y divide-[#DDE5E0] dark:divide-[#29382F] overflow-hidden max-h-60 overflow-y-auto"
+        >
+          @for (item of crms.globalSearchResults(); track item.id) {
+            <button
+              type="button"
+              (click)="selectSearchResult(item); mobileSearchOpen.set(false)"
+              class="w-full px-3.5 py-3 text-left hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] flex items-center justify-between gap-3 text-xs min-h-[44px]"
+            >
+              <div class="truncate">
+                <div class="font-semibold text-[#14201A] dark:text-[#EDF3EE] truncate">{{ item.label }}</div>
+                <div class="text-[11px] font-mono text-[#4B5A52] dark:text-[#A3B3A9] truncate">{{ item.meta }}</div>
+              </div>
+              <span class="font-mono text-[10px] px-2 py-0.5 rounded-[4px] bg-[#F7F9F8] dark:bg-[#121413] text-[#4B5A52] shrink-0">
+                {{ item.module }}
+              </span>
+            </button>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Emergency Crisis Broadcast Banner -->
+  @if (crms.emergency().active) {
+    <div
+      role="alert"
+      class="bg-[#B91C1C] text-white px-4 lg:px-6 py-2.5 text-xs flex flex-wrap items-center justify-between gap-4 border-b border-red-900"
+    >
+      <div class="flex items-center gap-2 font-medium">
+        <mat-icon class="!w-4 !h-4 !text-[16px]">emergency_share</mat-icon>
+        <span class="font-bold">{{ crms.emergency().protocol }}:</span>
+        <span>{{ crms.emergency().broadcastMessage }}</span>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          (click)="setModule('digital-twin')"
+          class="px-2.5 py-1 bg-white text-red-800 font-semibold rounded-[6px] hover:bg-red-50 whitespace-nowrap"
+        >
+          View safe zones
+        </button>
+        <button
+          type="button"
+          (click)="crms.resolveEmergency()"
+          class="px-2.5 py-1 bg-red-900 text-white font-semibold rounded-[6px] hover:bg-red-950 whitespace-nowrap"
+        >
+          End drill
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Main Shell: Simplified 6-Item Navigation + Workspace -->
+  <div class="flex-1 flex flex-col lg:flex-row w-full max-w-[1680px] mx-auto">
+    <!-- Simplified Navigation Sidebar (Maximum 6 items: Home, Rooms, Bookings, Equipment, Reports, Admin) -->
+    <aside
+      [class.lg:w-56]="!crms.sidebarCollapsed()"
+      [class.lg:w-16]="crms.sidebarCollapsed()"
+      class="hidden md:flex w-full md:w-48 lg:w-56 shrink-0 bg-white dark:bg-[#19221D] border-b md:border-b-0 md:border-r border-[#DDE5E0] dark:border-[#29382F] p-3 flex-col justify-between gap-5"
+    >
+      <div class="space-y-4">
+        <!-- Simplified Navigation Links -->
+        <nav aria-label="Campus navigation" class="space-y-1">
+          @for (item of visibleNavItems(); track item.id) {
+            <button
+              type="button"
+              (click)="setModule(item.id)"
+              [attr.title]="item.label"
+              class="w-full px-2.5 py-2 rounded-[6px] text-xs font-medium flex items-center justify-between gap-2 text-left whitespace-nowrap transition-colors"
+              [class.bg-[#E8F3EC]]="crms.activeModule() === item.id && !crms.darkMode()"
+              [class.border-l-[3px]]="crms.activeModule() === item.id"
+              [class.border-[#1B7F4B]]="crms.activeModule() === item.id && !crms.darkMode()"
+              [class.dark:bg-[#1C2E24]]="crms.activeModule() === item.id && crms.darkMode()"
+              [class.dark:border-[#34D399]]="crms.activeModule() === item.id && crms.darkMode()"
+              [class.text-[#1B7F4B]]="crms.activeModule() === item.id && !crms.darkMode()"
+              [class.dark:text-[#34D399]]="crms.activeModule() === item.id && crms.darkMode()"
+              [class.font-semibold]="crms.activeModule() === item.id"
+              [class.text-[#4B5A52]]="crms.activeModule() !== item.id && !crms.darkMode()"
+              [class.dark:text-[#A3B3A9]]="crms.activeModule() !== item.id && crms.darkMode()"
+              [class.hover:bg-[#F7F9F8]]="crms.activeModule() !== item.id && !crms.darkMode()"
+              [class.dark:hover:bg-[#1C2E24]]="crms.activeModule() !== item.id && crms.darkMode()"
+            >
+              <span class="flex items-center gap-2.5 min-w-0">
+                <mat-icon class="!w-4 !h-4 !text-[16px] shrink-0">{{ item.icon }}</mat-icon>
+                @if (!crms.sidebarCollapsed()) {
+                  <span class="truncate whitespace-nowrap">{{ item.label }}</span>
+                }
+              </span>
+
+              @if (!crms.sidebarCollapsed()) {
+                @if (item.id === 'rooms-courses' && crms.disruptedTermCourses().length > 0) {
+                  <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[4px] bg-[#FDECEC] text-[#B91C1C] shrink-0">
+                    {{ crms.disruptedTermCourses().length }} offline
+                  </span>
+                }
+                @if (item.id === 'operations' && crms.pendingApprovalsCount() > 0) {
+                  <span class="font-mono text-[10px] font-semibold px-1.5 py-0.5 rounded-[4px] bg-[#FEF3E2] text-[#B45309] shrink-0">
+                    {{ crms.pendingApprovalsCount() }}
+                  </span>
+                }
+              }
+            </button>
+          }
+        </nav>
+
+        <!-- Floorplan Shortcut Link inside Rooms section context -->
+        @if (!crms.sidebarCollapsed()) {
+          <div class="pt-3 border-t border-[#DDE5E0] dark:border-[#29382F]">
+            <button
+              type="button"
+              (click)="setModule('digital-twin')"
+              class="w-full px-2.5 py-1.5 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] text-[11px] font-medium text-[#4B5A52] dark:text-[#A3B3A9] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] flex items-center gap-2"
+            >
+              <mat-icon class="!w-3.5 !h-3.5 !text-[14px]">map</mat-icon>
+              <span>Campus floorplan</span>
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Bottom Sidebar Controls: Language & Preferences -->
+      @if (!crms.sidebarCollapsed()) {
+        <div class="pt-3 border-t border-[#DDE5E0] dark:border-[#29382F] space-y-2 text-xs">
+          <div class="flex items-center justify-between text-[#4B5A52] dark:text-[#A3B3A9]">
+            <span>Language</span>
+            <div class="flex items-center gap-1 bg-[#F7F9F8] dark:bg-[#121815] p-0.5 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F]">
+              <button
+                type="button"
+                (click)="crms.language.set('en')"
+                class="px-2 py-0.5 text-[10px] font-semibold rounded-[4px]"
+                [class.bg-white]="crms.language() === 'en'"
+                [class.dark:bg-[#19221D]]="crms.language() === 'en'"
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                (click)="crms.language.set('fil')"
+                class="px-2 py-0.5 text-[10px] font-semibold rounded-[4px]"
+                [class.bg-white]="crms.language() === 'fil'"
+                [class.dark:bg-[#19221D]]="crms.language() === 'fil'"
+              >
+                FIL
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            (click)="crms.guideOpen.set(true)"
+            class="w-full px-2.5 py-1.5 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] text-[#4B5A52] dark:text-[#A3B3A9] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] text-[11px] flex items-center justify-center gap-1.5"
+          >
+            <mat-icon class="!w-3.5 !h-3.5 !text-[14px]">help_outline</mat-icon>
+            <span>Ask CRMS guide</span>
+          </button>
+        </div>
+      }
+    </aside>
+
+    <!-- Main Workspace (with pb-24 on mobile so bottom tab bar never covers content) -->
+    <main id="main-workspace" tabindex="-1" class="flex-1 p-3 sm:p-4 lg:p-6 pb-24 md:pb-6 overflow-y-auto focus:outline-none">
+      @if (crms.isLoadingView()) {
+        <div aria-busy="true" aria-label="Loading workspace" class="space-y-4">
+          <div class="h-12 rounded-[10px] bg-[#e6e6e0] dark:bg-[#222624] animate-pulse"></div>
+          <div class="h-64 rounded-[10px] bg-[#e6e6e0] dark:bg-[#222624] animate-pulse"></div>
+        </div>
+      } @else {
+        @switch (crms.activeModule()) {
+          <!-- ========================================== -->
+          <!-- 2. ROLE-BASED HOME (Simple Top 2-3 Tasks)  -->
+          <!-- ========================================== -->
+          @case ('overview') {
+            <div class="space-y-6">
+              <!-- Welcome Header: Personalized Greeting with First Name, Clean School Theme -->
+              <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 pb-3 border-b border-[#DDE5E0] dark:border-[#29382F]">
+                <div>
+                  <h1 class="text-xl lg:text-2xl font-bold text-[#14201A] dark:text-[#EDF3EE]">
+                    Hello, {{ userFirstName() }}
+                  </h1>
+                  <p class="text-xs text-[#4B5A52] dark:text-[#A3B3A9] mt-0.5">
+                    {{ crms.activePersona().title }} · {{ crms.activePersona().department }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- ROLE-TAILORED HOME ACTIONS (Asymmetric 2/3 Main & 1/3 Side Column) -->
+              @switch (crms.activeRole()) {
+                <!-- 1. STUDENT HOME -->
+                @case ('Student') {
+                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Main 2/3: Top 2 Actions + My Bookings Overview -->
+                    <div class="lg:col-span-2 space-y-6">
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button
+                          type="button"
+                          (click)="openBookingWizard({ category: 'Student Study', title: 'Study Pod Reservation' })"
+                          class="w-full text-left p-5 rounded-[8px] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] hover:border-[#1B7F4B] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] cursor-pointer transition-colors space-y-2 group"
+                        >
+                          <div class="w-10 h-10 rounded-[6px] bg-[#E8F3EC] dark:bg-[#1C2E24] text-[#1B7F4B] flex items-center justify-center">
+                            <mat-icon class="!w-5 !h-5 !text-[20px]">search</mat-icon>
+                          </div>
+                          <h2 class="text-base font-bold text-[#14201A] dark:text-[#EDF3EE] group-hover:text-[#1B7F4B]">
+                            Find a room
+                          </h2>
+                          <p class="text-xs text-[#4B5A52] dark:text-[#A3B3A9]">
+                            Browse classrooms, discussion pods, and sports facilities with instant availability checks.
+                          </p>
+                        </button>
+
+                        <button
+                          type="button"
+                          (click)="setModule('operations')"
+                          class="w-full text-left p-5 rounded-[8px] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] hover:border-[#1B7F4B] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] cursor-pointer transition-colors space-y-2 group"
+                        >
+                          <div class="w-10 h-10 rounded-[6px] bg-[#F7F9F8] dark:bg-[#121815] text-[#14201A] dark:text-[#EDF3EE] flex items-center justify-center border border-[#DDE5E0] dark:border-[#29382F]">
+                            <mat-icon class="!w-5 !h-5 !text-[20px]">calendar_month</mat-icon>
+                          </div>
+                          <h2 class="text-base font-bold text-[#14201A] dark:text-[#EDF3EE] group-hover:text-[#1B7F4B]">
+                            My bookings
+                          </h2>
+                          <p class="text-xs text-[#4B5A52] dark:text-[#A3B3A9]">
+                            Check the status of your club activity spaces, study pods, and equipment requests.
+                          </p>
+                        </button>
+                      </div>
+
+                      <!-- Student Active Reservations -->
+                      <section aria-label="Student active reservations" class="bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] rounded-[8px] p-5 space-y-3">
+                        <div class="flex items-center justify-between pb-2 border-b border-[#DDE5E0] dark:border-[#29382F]">
+                          <h3 class="text-xs font-bold text-[#14201A] dark:text-[#EDF3EE]">
+                            My Active Bookings
+                          </h3>
+                          <button
+                            type="button"
+                            (click)="setModule('operations')"
+                            class="text-xs text-[#1B7F4B] hover:underline font-medium"
+                          >
+                            View all
+                          </button>
+                        </div>
+                        <div class="divide-y divide-[#DDE5E0] dark:divide-[#29382F] text-xs">
+                          @for (b of recentActivity().slice(0, 2); track b.id) {
+                            <div class="py-2.5 flex items-center justify-between gap-3">
+                              <div>
+                                <div class="font-semibold text-[#14201A] dark:text-[#EDF3EE]">{{ b.title }}</div>
+                                <div class="text-[11px] font-mono text-[#4B5A52] dark:text-[#A3B3A9]">{{ b.targetName }} · {{ b.date }} {{ b.startTime }}-{{ b.endTime }}</div>
+                              </div>
+                              <span class="inline-flex items-center gap-1 text-xs text-[#14201A] dark:text-[#EDF3EE]">
+                                <mat-icon class="!w-3.5 !h-3.5 !text-[14px] text-[#1B7F4B]">check_circle</mat-icon>
+                                <span>{{ b.status }}</span>
+                              </span>
+                            </div>
+                          }
+                        </div>
+                      </section>
+                    </div>
+
+                    <!-- Side 1/3: Student Status & Badge -->
+                    <div class="space-y-4 text-xs">
+                      <div class="p-4 rounded-[8px] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] space-y-1.5">
+                        <span class="text-[#4B5A52] dark:text-[#A3B3A9]">Campus RFID Badge</span>
+                        <div class="font-mono font-bold text-sm text-[#14201A] dark:text-[#EDF3EE]">{{ crms.activePersona().badgeCode }}</div>
+                        <div class="flex items-center gap-1.5 text-[11px] text-[#14201A] dark:text-[#EDF3EE]">
+                          <mat-icon class="!w-3.5 !h-3.5 !text-[14px] text-[#1B7F4B]">check_circle</mat-icon>
+                          <span>Clearance active · Door access granted</span>
+                        </div>
+                      </div>
+
+                      <div class="p-4 rounded-[8px] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] space-y-1.5">
+                        <span class="text-[#4B5A52] dark:text-[#A3B3A9]">Active Equipment Loans</span>
+                        <div class="font-mono font-bold text-sm text-[#14201A] dark:text-[#EDF3EE]">1 active unit</div>
+                        <p class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">Dell Latitude 5540 · Due Nov 08</p>
+                      </div>
+
+                      <div class="p-4 rounded-[8px] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] space-y-1.5">
+                        <span class="text-[#4B5A52] dark:text-[#A3B3A9]">Open Study Pods</span>
+                        <div class="font-mono font-bold text-sm text-[#14201A] dark:text-[#EDF3EE]">3 available now</div>
+                        <p class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">Student Union Center Floor 1</p>
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                <!-- 2. FACULTY HOME -->
+                @case ('Faculty') {
+                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Main 2/3: Top 2 Actions + Teaching Schedule -->
+                    <div class="lg:col-span-2 space-y-6">
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button
+                          type="button"
+                          (click)="openBookingWizard({ category: 'Academic Class', title: 'Faculty Lecture Session' })"
+                          class="w-full text-left p-5 rounded-[8px] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] hover:border-[#1B7F4B] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] cursor-pointer transition-colors space-y-2 group"
+                        >
+                          <div class="w-10 h-10 rounded-[6px] bg-[#E8F3EC] dark:bg-[#1C2E24] text-[#1B7F4B] flex items-center justify-center">
+                            <mat-icon class="!w-5 !h-5 !text-[20px]">add_circle_outline</mat-icon>
+                          </div>
+                          <h2 class="text-base font-bold text-[#14201A] dark:text-[#EDF3EE] group-hover:text-[#1B7F4B]">
+                            Reserve a room
+                          </h2>
+                          <p class="text-xs text-[#4B5A52] dark:text-[#A3B3A9]">
+                            Book a classroom, lab, or auditorium for an exam, makeup lecture, or department meeting.
+                          </p>
+                        </button>
+
+                        <button
+                          type="button"
+                          (click)="setModule('rooms-courses')"
+                          class="w-full text-left p-5 rounded-[8px] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] hover:border-[#1B7F4B] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] cursor-pointer transition-colors space-y-2 group"
+                        >
+                          <div class="w-10 h-10 rounded-[6px] bg-[#F7F9F8] dark:bg-[#121413] text-[#14201A] dark:text-[#EDF3EE] flex items-center justify-center border border-[#DDE5E0] dark:border-[#29382F]">
+                            <mat-icon class="!w-5 !h-5 !text-[20px]">class</mat-icon>
+                          </div>
+                          <h2 class="text-base font-bold text-[#14201A] dark:text-[#EDF3EE] group-hover:text-[#1B7F4B]">
+                            My classes
+                          </h2>
+                          <p class="text-xs text-[#4B5A52] dark:text-[#A3B3A9]">
+                            Review your assigned term courses, fixed rooms, and relocate classes if a room is under maintenance.
+                          </p>
+                        </button>
+                      </div>
+
+                      <!-- Teaching Schedule -->
+                      <section aria-label="Today's teaching schedule" class="bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] rounded-[8px] p-5 space-y-3">
+                        <div class="flex items-center justify-between pb-2 border-b border-[#DDE5E0] dark:border-[#29382F]">
+                          <h3 class="text-xs font-bold text-[#14201A] dark:text-[#EDF3EE]">
+                            Today's Teaching Schedule
+                          </h3>
+                          <button
+                            type="button"
+                            (click)="setModule('rooms-courses')"
+                            class="text-xs text-[#1B7F4B] hover:underline font-medium"
+                          >
+                            All courses
+                          </button>
+                        </div>
+                        <div class="divide-y divide-[#DDE5E0] dark:divide-[#29382F] text-xs">
+                          @for (fc of crms.termCourses().slice(0, 3); track fc.id) {
+                            @let r = crms.getRoomById(fc.constantRoomId);
+                            <div class="py-2.5 flex items-center justify-between gap-3">
+                              <div>
+                                <div class="font-medium text-[#14201A] dark:text-[#EDF3EE]">
+                                  <span class="font-mono font-bold">{{ fc.courseCode }}</span> · {{ fc.courseTitle }}
+                                </div>
+                                <div class="font-mono text-[11px] text-[#4B5A52] dark:text-[#A3B3A9] mt-0.5">
+                                  {{ fc.scheduleDays }} {{ fc.startTime }}-{{ fc.endTime }} · {{ r?.name }} (<span class="font-mono">{{ r?.code }}</span>)
+                                </div>
+                              </div>
+                              <div class="shrink-0">
+                                @if (r?.availabilityState !== 'Operational') {
+                                  <span class="inline-flex items-center gap-1 text-xs text-[#14201A] dark:text-[#EDF3EE]">
+                                    <mat-icon class="!w-4 !h-4 !text-[16px] text-[#B91C1C]">build_circle</mat-icon>
+                                    <span>Offline</span>
+                                  </span>
+                                } @else {
+                                  <span class="inline-flex items-center gap-1 text-xs text-[#14201A] dark:text-[#EDF3EE]">
+                                    <mat-icon class="!w-4 !h-4 !text-[16px] text-[#1B7F4B]">check_circle</mat-icon>
+                                    <span>Ready</span>
+                                  </span>
+                                }
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </section>
+                    </div>
+
+                    <!-- Side 1/3: Term Courses Summary -->
+                    <div class="space-y-4 text-xs">
+                      <div class="p-4 rounded-[8px] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] space-y-2">
+                        <span class="text-[#4B5A52] dark:text-[#A3B3A9]">Assigned Courses</span>
+                        <div class="font-mono font-bold text-sm text-[#14201A] dark:text-[#EDF3EE]">
+                          {{ crms.termCourses().length }} classes active
+                        </div>
+                        <p class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">
+                          Biñan Campus · College of Engineering
+                        </p>
+                      </div>
+
+                      @if (crms.disruptedTermCourses().length > 0) {
+                        <div class="p-4 rounded-[8px] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] space-y-2">
+                          <div class="flex items-center gap-1.5 text-[#14201A] dark:text-[#EDF3EE] font-semibold">
+                            <mat-icon class="!w-4 !h-4 !text-[16px] text-[#B91C1C]">warning_amber</mat-icon>
+                            <span>Class Relocation Required</span>
+                          </div>
+                          <p class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">
+                            {{ crms.disruptedTermCourses()[0].courseCode }} fixed room is undergoing repairs.
+                          </p>
+                          <button
+                            type="button"
+                            (click)="jumpToCourseRelocation(crms.disruptedTermCourses()[0])"
+                            class="text-xs font-semibold text-[#1B7F4B] hover:underline"
+                          >
+                            Reserve alternate room
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- 3. STAFF HOME -->
+                @case ('Staff') {
+                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Main 2/3: Top 2 Actions + Active Maintenance Orders -->
+                    <div class="lg:col-span-2 space-y-6">
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button
+                          type="button"
+                          (click)="setModule('operations')"
+                          class="w-full text-left p-5 rounded-[8px] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] hover:border-[#1B7F4B] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] cursor-pointer transition-colors space-y-2 group"
+                        >
+                          <div class="w-10 h-10 rounded-[6px] bg-[#E8F3EC] dark:bg-[#1C2E24] text-[#1B7F4B] flex items-center justify-center">
+                            <mat-icon class="!w-5 !h-5 !text-[20px]">fact_check</mat-icon>
+                          </div>
+                          <h2 class="text-base font-bold text-[#14201A] dark:text-[#EDF3EE] group-hover:text-[#1B7F4B]">
+                            Today's requests
+                          </h2>
+                          <p class="text-xs text-[#4B5A52] dark:text-[#A3B3A9]">
+                            Review {{ crms.pendingApprovalsCount() }} pending room reservation requests and open repair work orders.
+                          </p>
+                        </button>
+
+                        <button
+                          type="button"
+                          (click)="setModule('equipment')"
+                          class="w-full text-left p-5 rounded-[8px] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] hover:border-[#1B7F4B] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] cursor-pointer transition-colors space-y-2 group"
+                        >
+                          <div class="w-10 h-10 rounded-[6px] bg-[#F7F9F8] dark:bg-[#121413] text-[#14201A] dark:text-[#EDF3EE] flex items-center justify-center border border-[#DDE5E0] dark:border-[#29382F]">
+                            <mat-icon class="!w-5 !h-5 !text-[20px]">inventory_2</mat-icon>
+                          </div>
+                          <h2 class="text-base font-bold text-[#14201A] dark:text-[#EDF3EE] group-hover:text-[#1B7F4B]">
+                            Equipment
+                          </h2>
+                          <p class="text-xs text-[#4B5A52] dark:text-[#A3B3A9]">
+                            Manage the check-in and check-out counter for laptops, science tools, and AV equipment.
+                          </p>
+                        </button>
+                      </div>
+
+                      <!-- Facility Work Orders -->
+                      <section aria-label="Active maintenance work orders" class="bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] rounded-[8px] p-5 space-y-3">
+                        <div class="flex items-center justify-between pb-2 border-b border-[#DDE5E0] dark:border-[#29382F]">
+                          <h3 class="text-xs font-bold text-[#14201A] dark:text-[#EDF3EE]">
+                            Active Maintenance Work Orders ({{ openMaintenanceOrders().length }})
+                          </h3>
+                          <button
+                            type="button"
+                            (click)="setModule('operations')"
+                            class="text-xs text-[#1B7F4B] hover:underline font-medium"
+                          >
+                            View all
+                          </button>
+                        </div>
+                        <div class="divide-y divide-[#DDE5E0] dark:divide-[#29382F] text-xs">
+                          @for (wo of openMaintenanceOrders().slice(0, 3); track wo.id) {
+                            <div class="py-2.5 flex items-center justify-between gap-3">
+                              <div>
+                                <div class="font-semibold text-[#14201A] dark:text-[#EDF3EE]">{{ wo.issueType }}</div>
+                                <div class="text-[11px] font-mono text-[#4B5A52] dark:text-[#A3B3A9]">{{ wo.targetName }} · Priority: {{ wo.priority }}</div>
+                              </div>
+                              <button
+                                type="button"
+                                (click)="advanceWorkOrder(wo)"
+                                class="px-2.5 py-1 text-xs font-medium border border-[#DDE5E0] dark:border-[#29382F] rounded-[6px] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] text-[#14201A] dark:text-[#EDF3EE]"
+                              >
+                                {{ wo.status === 'Open' ? 'Start work' : 'Mark resolved' }}
+                              </button>
+                            </div>
+                          }
+                        </div>
+                      </section>
+                    </div>
+
+                    <!-- Side 1/3: Facility Overview -->
+                    <div class="space-y-4 text-xs">
+                      <div class="p-4 rounded-[8px] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] space-y-2">
+                        <span class="text-[#4B5A52] dark:text-[#A3B3A9]">Facility Readiness</span>
+                        <div class="font-mono font-bold text-sm text-[#14201A] dark:text-[#EDF3EE]">
+                          {{ operationalRoomsCount() }} / {{ crms.rooms().length }} rooms ready
+                        </div>
+                        <p class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">
+                          Biñan Physical Plant &amp; Campus Operations
+                        </p>
+                      </div>
+
+                      <div class="p-4 rounded-[8px] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] space-y-2">
+                        <span class="text-[#4B5A52] dark:text-[#A3B3A9]">Pending Reservation Review</span>
+                        <div class="font-mono font-bold text-sm text-[#14201A] dark:text-[#EDF3EE]">
+                          {{ crms.pendingApprovalsCount() }} requests
+                        </div>
+                        <button
+                          type="button"
+                          (click)="setModule('operations')"
+                          class="text-xs font-semibold text-[#1B7F4B] hover:underline"
+                        >
+                          Review queue
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                <!-- 4. ADMIN HOME: Asymmetric 2/3 Main & 1/3 Side -->
+                @case ('Admin') {
+                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Main 2/3 Column: Needs Attention List + Today's Activity -->
+                    <div class="lg:col-span-2 space-y-6">
+                      <!-- Needs Attention (Simple row list) -->
+                      <section aria-label="Items needing immediate attention" class="bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] rounded-[8px] p-5 space-y-3">
+                        <div class="flex items-center gap-2 pb-2 border-b border-[#DDE5E0] dark:border-[#29382F]">
+                          <mat-icon class="!w-4 !h-4 !text-[16px] text-[#B45309]">warning_amber</mat-icon>
+                          <h2 class="text-sm font-semibold text-[#14201A] dark:text-[#EDF3EE]">
+                            Needs attention
+                          </h2>
+                        </div>
+
+                        <div class="divide-y divide-[#DDE5E0] dark:divide-[#29382F] text-xs">
+                          <!-- Row 1: Disrupted Rooms -->
+                          <div class="py-2.5 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                              <mat-icon class="!w-4 !h-4 !text-[16px] text-[#B91C1C] shrink-0">build_circle</mat-icon>
+                              <span class="text-[#14201A] dark:text-[#EDF3EE] truncate">
+                                @if (crms.disruptedTermCourses().length > 0) {
+                                  {{ crms.disruptedTermCourses()[0].courseCode }} fixed room is offline for maintenance
+                                } @else {
+                                  All fixed course rooms are currently operational
+                                }
+                              </span>
+                            </div>
+                            @if (crms.disruptedTermCourses().length > 0) {
+                              <button
+                                type="button"
+                                (click)="jumpToCourseRelocation(crms.disruptedTermCourses()[0])"
+                                class="text-xs font-semibold text-[#1B7F4B] hover:underline shrink-0"
+                              >
+                                Relocate class
+                              </button>
+                            }
+                          </div>
+
+                          <!-- Row 2: Pending Approvals -->
+                          <div class="py-2.5 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                              <mat-icon class="!w-4 !h-4 !text-[16px] text-[#B45309] shrink-0">schedule</mat-icon>
+                              <span class="text-[#14201A] dark:text-[#EDF3EE] truncate">
+                                {{ crms.pendingApprovalsCount() }} reservations awaiting administrator review
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              (click)="setModule('operations')"
+                              class="text-xs font-semibold text-[#1B7F4B] hover:underline shrink-0"
+                            >
+                              Review
+                            </button>
+                          </div>
+
+                          <!-- Row 3: Open Maintenance Work Orders -->
+                          <div class="py-2.5 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                              <mat-icon class="!w-4 !h-4 !text-[16px] text-[#4B5A52] shrink-0">build</mat-icon>
+                              <span class="text-[#14201A] dark:text-[#EDF3EE] truncate">
+                                {{ crms.openWorkOrdersCount() }} open facility repair orders in progress
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              (click)="setModule('operations')"
+                              class="text-xs font-semibold text-[#1B7F4B] hover:underline shrink-0"
+                            >
+                              Manage
+                            </button>
+                          </div>
+                        </div>
+                      </section>
+
+                      <!-- Today's Activity (Latest bookings and approvals with times) -->
+                      <section aria-label="Today's campus activity" class="bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] rounded-[8px] p-5 space-y-3">
+                        <div class="flex items-center justify-between pb-2 border-b border-[#DDE5E0] dark:border-[#29382F]">
+                          <div class="flex items-center gap-2">
+                            <mat-icon class="!w-4 !h-4 !text-[16px] text-[#1B7F4B]">history</mat-icon>
+                            <h2 class="text-sm font-semibold text-[#14201A] dark:text-[#EDF3EE]">
+                              Today's activity
+                            </h2>
+                          </div>
+                          <button
+                            type="button"
+                            (click)="setModule('operations')"
+                            class="text-xs font-medium text-[#1B7F4B] hover:underline"
+                          >
+                            All bookings
+                          </button>
+                        </div>
+
+                        <div class="divide-y divide-[#DDE5E0] dark:divide-[#29382F] text-xs">
+                          @for (act of recentActivity(); track act.id) {
+                            <div class="py-2.5 flex items-center justify-between gap-3">
+                              <div class="space-y-0.5 min-w-0">
+                                <div class="font-medium text-[#14201A] dark:text-[#EDF3EE] truncate">
+                                  {{ act.title }}
+                                </div>
+                                <div class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9] truncate">
+                                  {{ act.department }} · {{ act.targetName }}
+                                </div>
+                              </div>
+                              <div class="flex items-center gap-3 shrink-0">
+                                <span class="font-mono text-xs text-[#4B5A52] dark:text-[#A3B3A9]">
+                                  {{ act.startTime }}-{{ act.endTime }}
+                                </span>
+                                <span class="flex items-center gap-1 text-xs text-[#14201A] dark:text-[#EDF3EE]">
+                                  <mat-icon
+                                    class="!w-3.5 !h-3.5 !text-[14px]"
+                                    [class.text-[#1B7F4B]]="act.status === 'Approved'"
+                                    [class.text-[#B45309]]="act.status === 'Pending Approval'"
+                                    [class.text-[#B91C1C]]="act.status === 'Rejected'"
+                                  >
+                                    {{ act.status === 'Approved' ? 'check_circle' : act.status === 'Rejected' ? 'cancel' : 'schedule' }}
+                                  </mat-icon>
+                                  <span class="hidden sm:inline">{{ act.status }}</span>
+                                </span>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </section>
+                    </div>
+
+                    <!-- Side 1/3 Column: Space Utilization & Mini Floorplan Preview -->
+                    <div class="space-y-6">
+                      <!-- Compact Space Utilization Summary Line + Progress Bar + Link to Reports -->
+                      <section aria-label="Space utilization summary" class="bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] rounded-[8px] p-5 space-y-3">
+                        <div class="flex items-center justify-between">
+                          <span class="text-xs font-medium text-[#4B5A52] dark:text-[#A3B3A9]">Space utilization</span>
+                          <button
+                            type="button"
+                            (click)="setModule('analytics')"
+                            class="text-xs font-semibold text-[#1B7F4B] hover:underline"
+                          >
+                            Reports
+                          </button>
+                        </div>
+
+                        <div class="flex items-baseline justify-between">
+                          <span class="text-2xl font-bold font-sans tabular-nums text-[#14201A] dark:text-[#EDF3EE]">
+                            {{ crms.campusUtilizationPct() }}%
+                          </span>
+                          <span class="text-xs text-[#4B5A52] dark:text-[#A3B3A9]">
+                            {{ crms.totalOccupancy() }} of {{ crms.totalCapacity() }} seats occupied
+                          </span>
+                        </div>
+
+                        <div class="w-full bg-[#E8F3EC] dark:bg-[#1C2E24] h-2 rounded-full overflow-hidden">
+                          <div
+                            class="bg-[#1B7F4B] h-full rounded-full transition-all duration-300"
+                            [style.width.%]="crms.campusUtilizationPct()"
+                          ></div>
+                        </div>
+
+                        <div class="pt-2 border-t border-[#DDE5E0] dark:border-[#29382F] flex items-center justify-between text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">
+                          <span>Campus power load</span>
+                          <span class="font-mono">{{ crms.totalEnergyKw() }} kW</span>
+                        </div>
+                      </section>
+
+                      <!-- Small Floorplan Preview -->
+                      <section aria-label="Campus floorplan preview" class="bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] rounded-[8px] p-5 space-y-3">
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center gap-1.5">
+                            <mat-icon class="!w-4 !h-4 !text-[16px] text-[#1B7F4B]">map</mat-icon>
+                            <span class="text-xs font-medium text-[#14201A] dark:text-[#EDF3EE]">Rizal Hall floorplan</span>
+                          </div>
+                          <button
+                            type="button"
+                            (click)="setModule('digital-twin')"
+                            class="text-xs font-semibold text-[#1B7F4B] hover:underline"
+                          >
+                            Full map
+                          </button>
+                        </div>
+
+                        <!-- Mini Floorplan SVG Diagram -->
+                        <button
+                          type="button"
+                          (click)="setModule('digital-twin')"
+                          class="w-full h-36 rounded-[6px] bg-[#F7F9F8] dark:bg-[#121815] border border-[#DDE5E0] dark:border-[#29382F] p-2 flex flex-col justify-between cursor-pointer hover:border-[#1B7F4B] transition-colors text-left"
+                        >
+                          <svg viewBox="0 0 280 120" class="w-full h-full">
+                            <!-- Hallway -->
+                            <rect x="10" y="50" width="260" height="20" fill="#E8F3EC" stroke="#DDE5E0" stroke-width="1" rx="2" />
+                            <text x="140" y="64" font-size="8" fill="#4B5A52" text-anchor="middle" font-family="Public Sans, sans-serif">Central Corridor (Floor 1)</text>
+
+                            <!-- Rm 101: Ready -->
+                            <rect x="15" y="10" width="80" height="35" fill="#FFFFFF" stroke="#1B7F4B" stroke-width="1.5" rx="3" />
+                            <text x="55" y="26" font-size="9" font-weight="bold" fill="#14201A" text-anchor="middle" font-family="JetBrains Mono, monospace">Rm 101</text>
+                            <text x="55" y="38" font-size="7" fill="#1B7F4B" text-anchor="middle" font-family="Public Sans, sans-serif">Ready (44)</text>
+
+                            <!-- Rm 102: Ready -->
+                            <rect x="105" y="10" width="80" height="35" fill="#FFFFFF" stroke="#1B7F4B" stroke-width="1.5" rx="3" />
+                            <text x="145" y="26" font-size="9" font-weight="bold" fill="#14201A" text-anchor="middle" font-family="JetBrains Mono, monospace">Rm 102</text>
+                            <text x="145" y="38" font-size="7" fill="#1B7F4B" text-anchor="middle" font-family="Public Sans, sans-serif">Ready (40)</text>
+
+                            <!-- Rm 204: Maintenance -->
+                            <rect x="195" y="10" width="75" height="35" fill="#FDECEC" stroke="#B91C1C" stroke-width="1.5" rx="3" />
+                            <text x="232" y="26" font-size="9" font-weight="bold" fill="#14201A" text-anchor="middle" font-family="JetBrains Mono, monospace">Rm 204</text>
+                            <text x="232" y="38" font-size="7" fill="#B91C1C" text-anchor="middle" font-family="Public Sans, sans-serif">Offline</text>
+
+                            <!-- Discussion Pods -->
+                            <rect x="15" y="75" width="125" height="35" fill="#FFFFFF" stroke="#DDE5E0" stroke-width="1" rx="3" />
+                            <text x="77" y="93" font-size="8" font-weight="bold" fill="#14201A" text-anchor="middle" font-family="Public Sans, sans-serif">Discussion Pods A-C</text>
+                            <text x="77" y="103" font-size="7" fill="#4B5A52" text-anchor="middle" font-family="Public Sans, sans-serif">3 Available</text>
+
+                            <!-- AV Lab -->
+                            <rect x="150" y="75" width="120" height="35" fill="#FFFFFF" stroke="#DDE5E0" stroke-width="1" rx="3" />
+                            <text x="210" y="93" font-size="8" font-weight="bold" fill="#14201A" text-anchor="middle" font-family="Public Sans, sans-serif">Microprocessors Lab</text>
+                            <text x="210" y="103" font-size="7" fill="#4B5A52" text-anchor="middle" font-family="Public Sans, sans-serif">In session</text>
+                          </svg>
+                          <div class="text-[10px] text-center text-[#4B5A52] dark:text-[#A3B3A9] w-full">
+                            Click to open interactive 2D floorplan
+                          </div>
+                        </button>
+                      </section>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+          }
+
+          <!-- Standard Module Switchers -->
+          @case ('rooms-courses') {
+            <app-rooms-courses-view />
+          }
+
+          @case ('operations') {
+            <app-operations-analytics-security-view />
+          }
+
+          @case ('equipment') {
+            <app-equipment-lifecycle-view />
+          }
+
+          @case ('analytics') {
+            <app-operations-analytics-security-view />
+          }
+
+          @case ('security-ecosystem') {
+            <app-operations-analytics-security-view />
+          }
+
+          @case ('digital-twin') {
+            <app-digital-twin-view [embedded]="false" />
+          }
+
+          @case ('staff') {
+            <app-staff-student-events-view />
+          }
+
+          @case ('student-services') {
+            <app-staff-student-events-view />
+          }
+
+          @case ('events') {
+            <app-staff-student-events-view />
+          }
+        }
+      }
+    </main>
+  </div>
+
+  <!-- Dignified Footer with RA 10173 Compliance Note (Hidden on phone or padded above bottom bar) -->
+  <footer class="h-10 px-4 lg:px-6 mb-16 md:mb-0 border-t border-[#DDE5E0] dark:border-[#29382F] bg-white dark:bg-[#19221D] flex items-center justify-between text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">
+    <div>
+      <span>Biñan Campus Resource System</span>
+      <span class="hidden sm:inline"> · </span>
+      <span class="hidden sm:inline">Compliant with Philippine Data Privacy Act of 2012 (RA 10173)</span>
+    </div>
+    <button
+      type="button"
+      (click)="privacyModalOpen.set(true)"
+      class="hover:text-[#14201A] dark:hover:text-[#EDF3EE] underline"
+    >
+      Privacy policy
+    </button>
+  </footer>
+
+  <!-- ======================================================= -->
+  <!-- PHONE BOTTOM TAB BAR (Sticky on screens under 768px)    -->
+  <!-- 5 Tabs: Home, Rooms, Bookings, Equipment, More          -->
+  <!-- ======================================================= -->
+  <nav
+    aria-label="Mobile bottom navigation"
+    class="fixed bottom-0 inset-x-0 z-40 bg-white dark:bg-[#19221D] border-t border-[#DDE5E0] dark:border-[#29382F] pb-[calc(env(safe-area-inset-bottom))] md:hidden flex items-center justify-around h-16 shadow-lg select-none"
+  >
+    <!-- 1. Home -->
+    <button
+      type="button"
+      (click)="setModule('overview')"
+      class="flex flex-col items-center justify-center min-w-[48px] min-h-[48px] flex-1 py-1 transition-colors"
+      [class.text-[#1B7F4B]]="crms.activeModule() === 'overview' && !crms.darkMode()"
+      [class.dark:text-[#34D399]]="crms.activeModule() === 'overview' && crms.darkMode()"
+      [class.font-semibold]="crms.activeModule() === 'overview'"
+      [class.text-[#4B5A52]]="crms.activeModule() !== 'overview' && !crms.darkMode()"
+      [class.dark:text-[#A3B3A9]]="crms.activeModule() !== 'overview' && crms.darkMode()"
+    >
+      <mat-icon class="!w-5 !h-5 !text-[20px]">home</mat-icon>
+      <span class="text-[10px] mt-0.5">Home</span>
+    </button>
+
+    <!-- 2. Rooms -->
+    <button
+      type="button"
+      (click)="setModule('rooms-courses')"
+      class="relative flex flex-col items-center justify-center min-w-[48px] min-h-[48px] flex-1 py-1 transition-colors"
+      [class.text-[#1B7F4B]]="crms.activeModule() === 'rooms-courses' && !crms.darkMode()"
+      [class.dark:text-[#34D399]]="crms.activeModule() === 'rooms-courses' && crms.darkMode()"
+      [class.font-semibold]="crms.activeModule() === 'rooms-courses'"
+      [class.text-[#4B5A52]]="crms.activeModule() !== 'rooms-courses' && !crms.darkMode()"
+      [class.dark:text-[#A3B3A9]]="crms.activeModule() !== 'rooms-courses' && crms.darkMode()"
+    >
+      <mat-icon class="!w-5 !h-5 !text-[20px]">meeting_room</mat-icon>
+      <span class="text-[10px] mt-0.5">Rooms</span>
+      @if (crms.disruptedTermCourses().length > 0) {
+        <span class="absolute top-1.5 right-4 w-2 h-2 rounded-full bg-[#B91C1C]"></span>
+      }
+    </button>
+
+    <!-- 3. Bookings -->
+    <button
+      type="button"
+      (click)="setModule('operations')"
+      class="relative flex flex-col items-center justify-center min-w-[48px] min-h-[48px] flex-1 py-1 transition-colors"
+      [class.text-[#1B7F4B]]="crms.activeModule() === 'operations' && !crms.darkMode()"
+      [class.dark:text-[#34D399]]="crms.activeModule() === 'operations' && crms.darkMode()"
+      [class.font-semibold]="crms.activeModule() === 'operations'"
+      [class.text-[#4B5A52]]="crms.activeModule() !== 'operations' && !crms.darkMode()"
+      [class.dark:text-[#A3B3A9]]="crms.activeModule() !== 'operations' && crms.darkMode()"
+    >
+      <mat-icon class="!w-5 !h-5 !text-[20px]">calendar_month</mat-icon>
+      <span class="text-[10px] mt-0.5">Bookings</span>
+      @if (crms.pendingApprovalsCount() > 0) {
+        <span class="absolute top-1.5 right-4 w-2 h-2 rounded-full bg-[#B45309]"></span>
+      }
+    </button>
+
+    <!-- 4. Equipment -->
+    <button
+      type="button"
+      (click)="setModule('equipment')"
+      class="flex flex-col items-center justify-center min-w-[48px] min-h-[48px] flex-1 py-1 transition-colors"
+      [class.text-[#1B7F4B]]="crms.activeModule() === 'equipment' && !crms.darkMode()"
+      [class.dark:text-[#34D399]]="crms.activeModule() === 'equipment' && crms.darkMode()"
+      [class.font-semibold]="crms.activeModule() === 'equipment'"
+      [class.text-[#4B5A52]]="crms.activeModule() !== 'equipment' && !crms.darkMode()"
+      [class.dark:text-[#A3B3A9]]="crms.activeModule() !== 'equipment' && crms.darkMode()"
+    >
+      <mat-icon class="!w-5 !h-5 !text-[20px]">inventory_2</mat-icon>
+      <span class="text-[10px] mt-0.5">Equipment</span>
+    </button>
+
+    <!-- 5. More -->
+    <button
+      type="button"
+      (click)="moreSheetOpen.set(!moreSheetOpen())"
+      [attr.aria-expanded]="moreSheetOpen()"
+      class="flex flex-col items-center justify-center min-w-[48px] min-h-[48px] flex-1 py-1 transition-colors"
+      [class.text-[#1B7F4B]]="moreSheetOpen() || crms.activeModule() === 'analytics' || crms.activeModule() === 'security-ecosystem' || crms.activeModule() === 'digital-twin'"
+      [class.font-semibold]="moreSheetOpen() || crms.activeModule() === 'analytics' || crms.activeModule() === 'security-ecosystem' || crms.activeModule() === 'digital-twin'"
+      [class.text-[#4B5A52]]="!moreSheetOpen() && crms.activeModule() !== 'analytics' && crms.activeModule() !== 'security-ecosystem' && crms.activeModule() !== 'digital-twin'"
+    >
+      <mat-icon class="!w-5 !h-5 !text-[20px]">more_horiz</mat-icon>
+      <span class="text-[10px] mt-0.5">More</span>
+    </button>
+  </nav>
+
+  <!-- Mobile "More" Bottom Sheet (Reports, Admin, Floorplan, Language, Help, Privacy) -->
+  @if (moreSheetOpen()) {
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="mobile-more-title"
+      class="fixed inset-0 z-50 md:hidden flex items-end"
+    >
+      <!-- Backdrop -->
+      <button
+        type="button"
+        aria-label="Close more options"
+        (click)="moreSheetOpen.set(false)"
+        class="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity w-full h-full cursor-default"
+      ></button>
+
+      <div class="relative w-full bg-white dark:bg-[#19221D] border-t border-[#DDE5E0] dark:border-[#29382F] rounded-t-[16px] p-5 space-y-4 max-h-[85dvh] overflow-y-auto pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-2xl text-xs">
+        <!-- Sheet Header -->
+        <div class="flex items-center justify-between pb-2 border-b border-[#DDE5E0] dark:border-[#29382F]">
+          <h2 id="mobile-more-title" class="text-sm font-bold text-[#14201A] dark:text-[#EDF3EE]">
+            More Campus Modules &amp; Tools
+          </h2>
+          <button
+            type="button"
+            (click)="moreSheetOpen.set(false)"
+            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-[#4B5A52] dark:text-[#A3B3A9]"
+          >
+            <mat-icon class="!w-5 !h-5 !text-[20px]">close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Links Grid -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <!-- Reports & Financial CSV -->
+          <button
+            type="button"
+            (click)="setModule('analytics')"
+            class="p-3.5 rounded-[8px] border border-[#DDE5E0] dark:border-[#29382F] bg-[#F7F9F8] dark:bg-[#121815] text-left space-y-1 min-h-[48px] hover:border-[#1B7F4B]"
+          >
+            <div class="flex items-center gap-1.5 font-bold text-[#14201A] dark:text-[#EDF3EE]">
+              <mat-icon class="!w-4 !h-4 !text-[16px] text-[#1B7F4B]">bar_chart</mat-icon>
+              <span>Reports</span>
+            </div>
+            <p class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">Occupancy analytics &amp; CSV export</p>
+          </button>
+
+          <!-- 2D Floorplan -->
+          <button
+            type="button"
+            (click)="setModule('digital-twin')"
+            class="p-3.5 rounded-[8px] border border-[#DDE5E0] dark:border-[#29382F] bg-[#F7F9F8] dark:bg-[#121815] text-left space-y-1 min-h-[48px] hover:border-[#1B7F4B]"
+          >
+            <div class="flex items-center gap-1.5 font-bold text-[#14201A] dark:text-[#EDF3EE]">
+              <mat-icon class="!w-4 !h-4 !text-[16px] text-[#1B7F4B]">map</mat-icon>
+              <span>Floorplan</span>
+            </div>
+            <p class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">Interactive 2D room twin</p>
+          </button>
+
+          <!-- Admin (Visible only to Administrators) -->
+          @if (crms.activeRole() === 'Admin') {
+            <button
+              type="button"
+              (click)="setModule('security-ecosystem')"
+              class="p-3.5 rounded-[8px] border border-[#DDE5E0] dark:border-[#29382F] bg-[#F7F9F8] dark:bg-[#121815] text-left space-y-1 min-h-[48px] hover:border-[#1B7F4B]"
+            >
+              <div class="flex items-center gap-1.5 font-bold text-[#14201A] dark:text-[#EDF3EE]">
+                <mat-icon class="!w-4 !h-4 !text-[16px] text-[#B45309]">admin_panel_settings</mat-icon>
+                <span>Admin</span>
+              </div>
+              <p class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">Audit logs &amp; cashier load</p>
+            </button>
+          }
+
+          <!-- CRMS Guide -->
+          <button
+            type="button"
+            (click)="crms.guideOpen.set(true); moreSheetOpen.set(false)"
+            class="p-3.5 rounded-[8px] border border-[#DDE5E0] dark:border-[#29382F] bg-[#F7F9F8] dark:bg-[#121815] text-left space-y-1 min-h-[48px] hover:border-[#1B7F4B]"
+          >
+            <div class="flex items-center gap-1.5 font-bold text-[#14201A] dark:text-[#EDF3EE]">
+              <mat-icon class="!w-4 !h-4 !text-[16px] text-[#1B7F4B]">help_outline</mat-icon>
+              <span>Ask guide</span>
+            </div>
+            <p class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">AI campus assistant</p>
+          </button>
+        </div>
+
+        <!-- Language & Privacy Controls -->
+        <div class="pt-2 border-t border-[#DDE5E0] dark:border-[#29382F] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-[#4B5A52] dark:text-[#A3B3A9]">Language:</span>
+            <div class="inline-flex rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] p-0.5 bg-[#F7F9F8] dark:bg-[#121815]">
+              <button
+                type="button"
+                (click)="crms.language.set('en')"
+                class="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-[4px]"
+                [class.bg-white]="crms.language() === 'en'"
+                [class.dark:bg-[#19221D]]="crms.language() === 'en'"
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                (click)="crms.language.set('fil')"
+                class="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-[4px]"
+                [class.bg-white]="crms.language() === 'fil'"
+                [class.dark:bg-[#19221D]]="crms.language() === 'fil'"
+              >
+                FIL
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            (click)="privacyModalOpen.set(true); moreSheetOpen.set(false)"
+            class="min-h-[44px] px-3 py-1.5 text-xs text-[#1B7F4B] underline font-medium flex items-center"
+          >
+            Privacy policy
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ======================================================= -->
+  <!-- 5. GUIDED 3-STEP BOOKING FLOW MODAL                      -->
+  <!-- Bottom Sheet on Phone, Centered Modal on Tablet/Desktop  -->
+  <!-- ======================================================= -->
+  @if (crms.quickBookModalOpen()) {
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="guided-booking-modal-title"
+      class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4"
+    >
+      <div class="bg-white dark:bg-[#19221D] border-t sm:border border-[#DDE5E0] dark:border-[#29382F] rounded-t-[16px] sm:rounded-[10px] max-w-lg w-full max-h-[92dvh] sm:max-h-[85vh] flex flex-col p-4 sm:p-5 space-y-4 shadow-2xl overflow-hidden pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-5">
+        <!-- Wizard Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-[#DDE5E0] dark:border-[#29382F] shrink-0">
+          <div>
+            <h2 id="guided-booking-modal-title" class="text-base font-bold text-[#14201A] dark:text-[#EDF3EE]">
+              Reserve a campus room
+            </h2>
+            <p class="text-xs text-[#4B5A52] dark:text-[#A3B3A9]">
+              Step {{ bookingStep() }} of 3:
+              @switch (bookingStep()) {
+                @case (1) { Date &amp; time }
+                @case (2) { Select available room }
+                @case (3) { Confirm reservation }
+              }
+            </p>
+          </div>
+          <button
+            type="button"
+            (click)="closeBookingWizard()"
+            aria-label="Close booking wizard"
+            class="min-h-[44px] min-w-[44px] flex items-center justify-center p-1 rounded-[6px] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] text-[#4B5A52] hover:text-[#14201A] dark:hover:text-white"
+          >
+            <mat-icon class="!w-5 !h-5 !text-[20px]">close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div class="flex items-center gap-2 shrink-0">
+          <div class="h-1 flex-1 rounded-full transition-colors" [class.bg-[#1B7F4B]]="bookingStep() >= 1" [class.bg-[#DDE5E0]]="bookingStep() < 1"></div>
+          <div class="h-1 flex-1 rounded-full transition-colors" [class.bg-[#1B7F4B]]="bookingStep() >= 2" [class.bg-[#DDE5E0]]="bookingStep() < 2"></div>
+          <div class="h-1 flex-1 rounded-full transition-colors" [class.bg-[#1B7F4B]]="bookingStep() >= 3" [class.bg-[#DDE5E0]]="bookingStep() < 3"></div>
+        </div>
+
+        <!-- ============================== -->
+        <!-- STEP 1: DATE & TIME            -->
+        <!-- ============================== -->
+        @if (bookingStep() === 1) {
+          <div class="space-y-3.5 text-xs overflow-y-auto flex-1 pr-1">
+            <div>
+              <label for="b-title" class="block font-semibold text-[#14201A] dark:text-[#EDF3EE] mb-1">
+                Purpose or event title <span class="text-[#B91C1C]">*</span>
+              </label>
+              <input
+                id="b-title"
+                type="text"
+                [formControl]="bookingForm.controls.title"
+                placeholder="e.g. IT-208 Makeup Class, IEEE General Meeting"
+                class="w-full px-3 py-2.5 text-base sm:text-xs rounded-[6px] bg-[#F7F9F8] dark:bg-[#121815] border border-[#DDE5E0] dark:border-[#29382F] text-[#14201A] dark:text-[#EDF3EE] focus:border-[#1B7F4B] focus:outline-none"
+              />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="b-cat" class="block font-semibold text-[#14201A] dark:text-[#EDF3EE] mb-1">
+                  Category <span class="text-[#B91C1C]">*</span>
+                </label>
+                <select
+                  id="b-cat"
+                  [formControl]="bookingForm.controls.category"
+                  class="w-full px-2.5 py-2.5 text-base sm:text-xs rounded-[6px] bg-[#F7F9F8] dark:bg-[#121815] border border-[#DDE5E0] dark:border-[#29382F] text-[#14201A] dark:text-[#EDF3EE] focus:border-[#1B7F4B] focus:outline-none"
+                >
+                  <option value="Academic Class">Academic Class</option>
+                  <option value="Make-Up / Relocation">Make-Up / Relocation</option>
+                  <option value="Seminar & Symposium">Seminar & Symposium</option>
+                  <option value="Club Activity">Club Activity</option>
+                  <option value="Student Study">Student Study</option>
+                  <option value="Lab Research">Lab Research</option>
+                  <option value="Sports Tournament">Sports Tournament</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="b-att" class="block font-semibold text-[#14201A] dark:text-[#EDF3EE] mb-1">
+                  Expected students <span class="text-[#B91C1C]">*</span>
+                </label>
+                <input
+                  id="b-att"
+                  type="number"
+                  [formControl]="bookingForm.controls.attendees"
+                  class="w-full px-3 py-2.5 text-base sm:text-xs rounded-[6px] bg-[#F7F9F8] dark:bg-[#121815] border border-[#DDE5E0] dark:border-[#29382F] font-mono tabular-nums text-[#14201A] dark:text-[#EDF3EE] focus:border-[#1B7F4B] focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <!-- Stacks vertically on phone, 3 columns on tablet/desktop -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label for="b-date" class="block font-semibold text-[#14201A] dark:text-[#EDF3EE] mb-1">
+                  Date <span class="text-[#B91C1C]">*</span>
+                </label>
+                <input
+                  id="b-date"
+                  type="date"
+                  [formControl]="bookingForm.controls.date"
+                  class="w-full px-2.5 py-2.5 text-base sm:text-xs rounded-[6px] bg-[#F7F9F8] dark:bg-[#121815] border border-[#DDE5E0] dark:border-[#29382F] font-mono text-[#14201A] dark:text-[#EDF3EE] focus:border-[#1B7F4B] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label for="b-start" class="block font-semibold text-[#14201A] dark:text-[#EDF3EE] mb-1">
+                  Start time <span class="text-[#B91C1C]">*</span>
+                </label>
+                <input
+                  id="b-start"
+                  type="time"
+                  [formControl]="bookingForm.controls.startTime"
+                  class="w-full px-2.5 py-2.5 text-base sm:text-xs rounded-[6px] bg-[#F7F9F8] dark:bg-[#121815] border border-[#DDE5E0] dark:border-[#29382F] font-mono text-[#14201A] dark:text-[#EDF3EE] focus:border-[#1B7F4B] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label for="b-end" class="block font-semibold text-[#14201A] dark:text-[#EDF3EE] mb-1">
+                  End time <span class="text-[#B91C1C]">*</span>
+                </label>
+                <input
+                  id="b-end"
+                  type="time"
+                  [formControl]="bookingForm.controls.endTime"
+                  class="w-full px-2.5 py-2.5 text-base sm:text-xs rounded-[6px] bg-[#F7F9F8] dark:bg-[#121815] border border-[#DDE5E0] dark:border-[#29382F] font-mono text-[#14201A] dark:text-[#EDF3EE] focus:border-[#1B7F4B] focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <!-- Sticky Submit / Action Bar -->
+            <div class="pt-3 border-t border-[#DDE5E0] dark:border-[#29382F] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 shrink-0">
+              <button
+                type="button"
+                (click)="closeBookingWizard()"
+                class="min-h-[44px] px-3.5 py-2 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] text-[#14201A] dark:text-[#EDF3EE] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] text-center"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                (click)="goToBookingStep2()"
+                class="min-h-[44px] px-4 py-2 font-semibold rounded-[6px] bg-[#1B7F4B] hover:bg-[#16683D] text-white transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+              >
+                <span>Find available rooms</span>
+                <mat-icon class="!w-4 !h-4 !text-[16px]">arrow_forward</mat-icon>
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- ============================================== -->
+        <!-- STEP 2: AVAILABLE ROOMS WITH CAPACITY & ALT    -->
+        <!-- ============================================== -->
+        @if (bookingStep() === 2) {
+          <div class="space-y-3.5 text-xs overflow-y-auto flex-1 pr-1">
+            <div class="flex items-center justify-between text-[#4B5A52] dark:text-[#A3B3A9]">
+              <span class="truncate">
+                {{ bookingForm.controls.date.value }} · <span class="font-mono">{{ bookingForm.controls.startTime.value }}-{{ bookingForm.controls.endTime.value }}</span> · <span class="font-mono tabular-nums">{{ bookingForm.controls.attendees.value }}</span> seats
+              </span>
+              <button
+                type="button"
+                (click)="bookingStep.set(1)"
+                class="text-[#1B7F4B] underline font-medium min-h-[36px] flex items-center px-1"
+              >
+                Change
+              </button>
+            </div>
+
+            <!-- If nearest alternative recommended due to conflict -->
+            @if (nearestAlternativeRoom(); as altRoom) {
+              <div class="p-3 rounded-[6px] bg-[#E8F3EC] dark:bg-[#1C2E24] border border-[#1B7F4B]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span class="font-semibold text-[#14201A] dark:text-[#EDF3EE]">Recommended available room:</span>
+                  <p class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">
+                    <span class="font-mono font-bold">{{ altRoom.code }}</span> ({{ altRoom.capacity }} seats) in {{ altRoom.building }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  (click)="selectRoomForBooking(altRoom)"
+                  class="min-h-[44px] px-3.5 py-1.5 font-semibold rounded-[6px] bg-[#1B7F4B] text-white text-xs whitespace-nowrap self-start sm:self-auto"
+                >
+                  Select room
+                </button>
+              </div>
+            }
+
+            <!-- Available Rooms List -->
+            @if (eligibleRoomsOnly().length === 0) {
+              <div class="p-6 text-center space-y-2 border border-dashed border-[#DDE5E0] dark:border-[#29382F] rounded-[6px]">
+                <mat-icon class="!w-6 !h-6 !text-[24px] text-[#B45309]">event_busy</mat-icon>
+                <p class="font-semibold text-[#14201A] dark:text-[#EDF3EE]">No rooms available for this time</p>
+                <p class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">
+                  All campus rooms of sufficient capacity have standing courses or maintenance holds.
+                </p>
+                <button
+                  type="button"
+                  (click)="bookingStep.set(1)"
+                  class="min-h-[44px] mt-2 px-3.5 py-2 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] text-xs font-medium"
+                >
+                  Pick a different time
+                </button>
+              </div>
+            } @else {
+              <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                @for (item of eligibleRoomsOnly(); track item.room.id) {
+                  <button
+                    type="button"
+                    (click)="selectRoomForBooking(item.room)"
+                    class="w-full text-left p-3 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] hover:border-[#1B7F4B] bg-[#F7F9F8] dark:bg-[#121413] cursor-pointer flex items-center justify-between gap-3 transition-colors min-h-[48px]"
+                  >
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-mono font-bold text-sm text-[#14201A] dark:text-[#EDF3EE]">{{ item.room.code }}</span>
+                        <span class="font-medium text-[#14201A] dark:text-[#EDF3EE]">{{ item.room.name }}</span>
+                      </div>
+                      <div class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">
+                        {{ item.room.building }} · <span class="font-mono tabular-nums">{{ item.room.capacity }}</span> seats
+                      </div>
+                    </div>
+                    <span
+                      class="px-3 py-1.5 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] bg-white dark:bg-[#19221D] text-xs font-semibold"
+                    >
+                      Select
+                    </span>
+                  </button>
+                }
+              </div>
+            }
+
+            <div class="pt-3 border-t border-[#DDE5E0] dark:border-[#29382F] flex items-center justify-between">
+              <button
+                type="button"
+                (click)="bookingStep.set(1)"
+                class="min-h-[44px] px-3.5 py-2 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] text-xs"
+              >
+                Back
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- ============================== -->
+        <!-- STEP 3: REVIEW & CONFIRM       -->
+        <!-- ============================== -->
+        @if (bookingStep() === 3) {
+          <div class="space-y-3.5 text-xs overflow-y-auto flex-1 pr-1">
+            <div class="p-4 rounded-[8px] bg-[#F7F9F8] dark:bg-[#121413] border border-[#DDE5E0] dark:border-[#29382F] space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[#4B5A52] dark:text-[#A3B3A9]">Selected room</span>
+                <span class="font-mono font-bold text-sm text-[#1B7F4B]">
+                  {{ currentlySelectedRoom()?.code }}
+                </span>
+              </div>
+              <div class="font-medium text-[#14201A] dark:text-[#EDF3EE]">{{ currentlySelectedRoom()?.name }}</div>
+              <div class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">
+                {{ currentlySelectedRoom()?.building }} · {{ currentlySelectedRoom()?.capacity }} seats capacity
+              </div>
+
+              <div class="pt-2 border-t border-[#DDE5E0] dark:border-[#29382F] space-y-1">
+                <div class="flex justify-between">
+                  <span class="text-[#4B5A52] dark:text-[#A3B3A9]">Session title:</span>
+                  <span class="font-semibold text-right truncate max-w-[200px]">{{ bookingForm.controls.title.value }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[#4B5A52] dark:text-[#A3B3A9]">Date &amp; Time:</span>
+                  <span class="font-mono text-right">{{ bookingForm.controls.date.value }} ({{ bookingForm.controls.startTime.value }}-{{ bookingForm.controls.endTime.value }})</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[#4B5A52] dark:text-[#A3B3A9]">Requester:</span>
+                  <span>{{ crms.activePersona().name }} ({{ crms.activeRole() }})</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Verified Conflict-Free Status Badge -->
+            <div class="p-2.5 rounded-[6px] bg-[#E8F3EC] dark:bg-[#1C2E24] border border-[#1B7F4B]/30 flex items-center gap-2 text-[#14201A] dark:text-[#EDF3EE]">
+              <mat-icon class="!w-4 !h-4 !text-[16px] text-[#1B7F4B]">check_circle</mat-icon>
+              <span>Verified conflict-free against standing courses and maintenance schedules.</span>
+            </div>
+
+            <div class="pt-3 border-t border-[#DDE5E0] dark:border-[#29382F] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2">
+              <button
+                type="button"
+                (click)="bookingStep.set(2)"
+                class="min-h-[44px] px-3.5 py-2 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] text-xs text-center"
+              >
+                Back to rooms
+              </button>
+              <button
+                type="button"
+                (click)="confirmBookingSubmission()"
+                class="min-h-[44px] px-4 py-2 font-semibold rounded-[6px] bg-[#1B7F4B] hover:bg-[#16683D] text-white transition-colors text-center shadow-xs"
+              >
+                Confirm reservation
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Privacy & RA 10173 Modal -->
+  @if (privacyModalOpen()) {
+    <div
+      role="dialog"
+      aria-modal="true"
+      class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+    >
+      <div class="bg-[#fbfbfa] dark:bg-[#181b19] border border-[#dcdcd5] dark:border-[#2c322e] rounded-[10px] max-w-md w-full p-5 space-y-3 shadow-xl text-xs">
+        <div class="flex items-center justify-between pb-2 border-b border-[#dcdcd5] dark:border-[#2c322e]">
+          <h2 class="font-bold text-sm text-[#161917] dark:text-[#eceee9]">Campus Data Privacy &amp; RA 10173</h2>
+          <button type="button" (click)="privacyModalOpen.set(false)" class="text-[#565b56] hover:text-[#161917]">
+            <mat-icon class="!w-4 !h-4 !text-[16px]">close</mat-icon>
+          </button>
+        </div>
+        <p class="text-[#565b56] dark:text-[#9ca39e]">
+          The Biñan Campus Resource Management System complies with the Data Privacy Act of 2012 (Republic Act No. 10173). Personal information, RFID access logs, and student records are processed solely for room scheduling, asset accountability, and campus safety.
+        </p>
+        <p class="text-[#565b56] dark:text-[#9ca39e]">
+          National Privacy Commission Seal: <span class="font-mono">#NPC-PIC-2026-BINAN-0842</span>. Inquiries may be directed to the Campus Data Protection Officer.
+        </p>
+        <div class="pt-2 border-t border-[#dcdcd5] dark:border-[#2c322e] flex justify-end">
+          <button
+            type="button"
+            (click)="privacyModalOpen.set(false)"
+            class="px-3 py-1.5 rounded-[6px] border border-[#dcdcd5] dark:border-[#2c322e] font-medium"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Destructive / High-Impact Action Confirmation Modal -->
+  @if (crms.confirmDialog().open) {
+    <div
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
+      class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+    >
+      <div class="bg-[#fbfbfa] dark:bg-[#181b19] border border-[#dcdcd5] dark:border-[#2c322e] rounded-[10px] max-w-md w-full p-5 space-y-4 shadow-lg text-xs">
+        <div class="flex items-start gap-3">
+          <mat-icon
+            class="!w-5 !h-5 !text-[20px] shrink-0 mt-0.5"
+            [class.text-red-700]="crms.confirmDialog().severity === 'danger'"
+            [class.text-amber-700]="crms.confirmDialog().severity === 'warning'"
+          >
+            warning_amber
+          </mat-icon>
+          <div class="space-y-1.5">
+            <h2 id="confirm-dialog-title" class="text-sm font-bold text-[#181a18] dark:text-[#eceee9]">
+              {{ crms.confirmDialog().title }}
+            </h2>
+            <div class="p-2.5 rounded-[6px] bg-[#f0f0eb] dark:bg-[#222624] border border-[#dcdcd5] dark:border-[#2c322e] text-[#181a18] dark:text-[#eceee9] font-medium">
+              {{ crms.confirmDialog().consequence }}
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-[#dcdcd5] dark:border-[#2c322e]">
+          <button
+            type="button"
+            (click)="crms.closeConfirmation()"
+            class="px-3 py-1.5 font-semibold rounded-[6px] border border-[#dcdcd5] dark:border-[#2c322e] text-[#181a18] dark:text-[#eceee9]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            (click)="crms.executeConfirmation()"
+            class="px-3.5 py-1.5 font-semibold rounded-[6px] text-white"
+            [class.bg-red-700]="crms.confirmDialog().severity === 'danger'"
+            [class.hover:bg-red-800]="crms.confirmDialog().severity === 'danger'"
+            [class.bg-[#14532d]]="crms.confirmDialog().severity !== 'danger'"
+          >
+            {{ crms.confirmDialog().confirmLabel }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Toasts with Optional Undo Action (Positioned Top-Right to Never Block Nav/Footer) -->
+  @if (crms.toasts().length > 0) {
+    <div
+      role="status"
+      aria-live="polite"
+      class="fixed top-16 right-6 z-50 space-y-2 max-w-sm w-full pointer-events-none"
+    >
+      @for (toast of crms.toasts(); track toast.id) {
+        <div
+          class="pointer-events-auto p-3.5 rounded-[8px] border border-[#DDE5E0] dark:border-[#29382F] shadow-sm bg-white dark:bg-[#19221D] text-xs flex items-start justify-between gap-3"
+        >
+          <div class="space-y-1">
+            <div class="font-bold text-[#14201A] dark:text-[#EDF3EE] flex items-center gap-1.5">
+              <mat-icon
+                class="!w-4 !h-4 !text-[16px]"
+                [class.text-[#1B7F4B]]="toast.type === 'success'"
+                [class.text-[#B91C1C]]="toast.type === 'error'"
+                [class.text-[#B45309]]="toast.type === 'warning'"
+                [class.text-[#4B5A52]]="toast.type === 'info'"
+              >
+                {{
+                  toast.type === 'success'
+                    ? 'check_circle'
+                    : toast.type === 'error'
+                      ? 'error_outline'
+                      : toast.type === 'warning'
+                        ? 'warning_amber'
+                        : 'info'
+                }}
+              </mat-icon>
+              <span>{{ toast.title }}</span>
+            </div>
+            <p class="text-[#4B5A52] dark:text-[#A3B3A9]">{{ toast.message }}</p>
+            @if (toast.undoLabel) {
+              <button
+                type="button"
+                (click)="crms.triggerToastUndo(toast)"
+                class="mt-1 px-2.5 py-1 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] text-[#14201A] dark:text-[#EDF3EE] font-semibold text-[11px] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24]"
+              >
+                {{ toast.undoLabel }}
+              </button>
+            }
+          </div>
+          <button
+            type="button"
+            (click)="crms.dismissToast(toast.id)"
+            aria-label="Dismiss notification"
+            class="text-[#4B5A52] hover:text-[#14201A] dark:hover:text-white shrink-0"
+          >
+            <mat-icon class="!w-4 !h-4 !text-[16px]">close</mat-icon>
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Gemini Navigation & CRMS Assistant -->
+  <app-gemini-chatbot />
+</div>
