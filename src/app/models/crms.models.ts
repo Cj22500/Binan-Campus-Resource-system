@@ -149,7 +149,7 @@ export interface StudentProfile {
   program: string;
   yearLevel: string;
   rfidUid: string;
-  qrToken: string;
+  qrBadgeId: string;
   clearanceStatus: 'Cleared' | 'Hold - Unpaid Fine' | 'Hold - Overdue Equipment';
   eligibilityTier: 'Standard' | 'Lab Certified' | 'Varsity & Lab Certified';
   outstandingBalancePhp: number;

@@ -11,6 +11,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
+app.set('trust proxy', true);
 app.use(express.json({ limit: '1mb' }));
 
 const angularApp = new AngularNodeAppEngine();

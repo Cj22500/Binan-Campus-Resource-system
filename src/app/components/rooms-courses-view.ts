@@ -49,32 +49,23 @@ import { TermCourseAssignment } from '../models/crms.models';
         </div>
       </div>
 
-      <!-- Disrupted Fixed Course Rooms Banner (Helpful state with recovery message) -->
+      <!-- Disrupted Fixed Course Rooms Banner (One line with View rooms link) -->
       @if (crms.disruptedTermCourses().length > 0) {
-        <div class="p-4 rounded-[10px] bg-amber-50/90 dark:bg-amber-950/40 border border-amber-700/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div class="space-y-1">
-            <div class="flex items-center gap-2 text-xs font-bold text-amber-950 dark:text-amber-200">
-              <mat-icon class="!w-4 !h-4 !text-[16px]">warning_amber</mat-icon>
-              <span>
-                {{ crms.disruptedTermCourses().length }} course room under maintenance
-              </span>
-            </div>
-            <p class="text-xs text-[#565b56] dark:text-[#9ca39e]">
-              A fixed room is temporarily offline for maintenance. The instructor can reserve a replacement room.
-            </p>
+        <div class="px-4 py-3 rounded-[8px] bg-amber-50/90 dark:bg-amber-950/40 border border-amber-700/40 flex items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-2 text-amber-950 dark:text-amber-200">
+            <mat-icon class="!w-4 !h-4 !text-[16px] text-amber-700 dark:text-amber-400 shrink-0">warning_amber</mat-icon>
+            <span class="font-medium">
+              {{ crms.disruptedTermCourses().length }} course rooms are offline for maintenance
+            </span>
           </div>
-          <div class="flex items-center gap-2 shrink-0">
-            @for (dc of crms.disruptedTermCourses(); track dc.id) {
-              <button
-                type="button"
-                (click)="openRelocationModal(dc)"
-                class="px-3 py-1.5 text-xs font-semibold rounded-[6px] border border-amber-800 dark:border-amber-400 bg-white dark:bg-[#181b19] text-amber-900 dark:text-amber-200 hover:bg-amber-100/50 inline-flex items-center gap-1.5"
-              >
-                <mat-icon class="!w-3.5 !h-3.5 !text-[14px]">swap_horiz</mat-icon>
-                <span>Reserve alternate for {{ dc.courseCode }}</span>
-              </button>
-            }
-          </div>
+          <button
+            type="button"
+            (click)="crms.activeModule.set('digital-twin')"
+            class="text-xs font-semibold text-amber-900 dark:text-amber-300 hover:underline inline-flex items-center gap-1 shrink-0"
+          >
+            <span>View rooms</span>
+            <mat-icon class="!w-3.5 !h-3.5 !text-[14px]">arrow_forward</mat-icon>
+          </button>
         </div>
       }
 
@@ -282,25 +273,26 @@ import { TermCourseAssignment } from '../models/crms.models';
                   @let relRoom = crms.getRoomById(course.relocatedRoomId);
                   @let isRoomDown = constRoom && constRoom.availabilityState !== 'Operational';
                   <tr
-                    class="h-14 hover:bg-[#efefeb]/60 dark:hover:bg-[#202422]/60 transition-colors"
+                    (click)="selectedCourseDetails.set(course)"
+                    class="h-14 hover:bg-[#efefeb]/60 dark:hover:bg-[#202422]/60 transition-colors cursor-pointer"
                   >
                     <!-- Col 1: Course info with monospace code and schedule -->
                     <td class="py-2.5 px-4 align-middle">
                       <div class="flex items-center gap-2">
-                        <span class="font-mono font-bold text-[#161917] dark:text-[#eceee9]">{{ course.courseCode }}</span>
-                        <span class="font-medium text-[#161917] dark:text-[#eceee9] truncate max-w-[240px]">{{ course.courseTitle }}</span>
+                        <span class="font-mono font-bold text-[#161917] dark:text-[#eceee9] shrink-0">{{ course.courseCode }}</span>
+                        <span class="font-medium text-[#161917] dark:text-[#eceee9] line-clamp-2 max-w-[240px]" [title]="course.courseTitle">{{ course.courseTitle }}</span>
                       </div>
                       <div class="text-[11px] text-[#565b56] dark:text-[#9ca39e] mt-0.5">
-                        {{ course.instructorName }} · <span class="font-mono">{{ course.scheduleDays }} {{ course.startTime }}-{{ course.endTime }}</span> · <span class="font-mono tabular-nums">{{ course.enrolledStudents }}</span> students
+                        {{ course.instructorName }} · <span>{{ crms.formatCourseSchedule12Hour(course.scheduleDays, course.startTime, course.endTime) }}</span> · <span class="font-mono tabular-nums">{{ course.enrolledStudents }}</span> students
                       </div>
                     </td>
 
-                    <!-- Col 2: Fixed Room -->
+                    <!-- Col 2: Fixed Room (Monospace code, sans room name) -->
                     <td class="py-2.5 px-4 align-middle">
                       <div class="font-mono font-bold text-[#161917] dark:text-[#eceee9]">
                         {{ constRoom?.code }}
                       </div>
-                      <div class="text-[11px] text-[#565b56] dark:text-[#9ca39e] truncate max-w-[200px]">
+                      <div class="font-sans text-[11px] text-[#565b56] dark:text-[#9ca39e] line-clamp-2 max-w-[200px]" [title]="constRoom?.name">
                         {{ constRoom?.name }}
                       </div>
                     </td>
@@ -325,17 +317,17 @@ import { TermCourseAssignment } from '../models/crms.models';
                       }
                     </td>
 
-                    <!-- Col 4: Action (Compact Secondary Button) -->
+                    <!-- Col 4: Action (Compact Neutral Button, no duplicate details button) -->
                     <td class="py-2.5 px-4 align-middle text-right whitespace-nowrap" (click)="$event.stopPropagation()">
                       <div class="inline-flex items-center justify-end gap-1.5">
                         @if (isRoomDown && !course.relocatedRoomId) {
                           <button
                             type="button"
                             (click)="openRelocationModal(course)"
-                            class="h-[30px] px-2.5 text-xs font-semibold rounded-[6px] border border-red-700 dark:border-red-500 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 inline-flex items-center gap-1"
+                            class="h-[30px] px-2.5 text-xs font-medium rounded-[6px] border border-[#dcdcd5] dark:border-[#2c322e] text-[#161917] dark:text-[#eceee9] hover:bg-[#efefeb] dark:hover:bg-[#222624] inline-flex items-center gap-1"
                           >
                             <mat-icon class="!w-3.5 !h-3.5 !text-[14px]">swap_horiz</mat-icon>
-                            <span>Reserve alternate</span>
+                            <span>Find alternate room</span>
                           </button>
                         } @else if (course.relocatedRoomId) {
                           <button
@@ -352,22 +344,6 @@ import { TermCourseAssignment } from '../models/crms.models';
                           >
                             Restore
                           </button>
-                        } @else if (crms.activeRole() === 'Admin') {
-                          <button
-                            type="button"
-                            (click)="openEditRoomDrawer(course)"
-                            class="h-[30px] px-2.5 text-xs font-medium border border-[#dcdcd5] dark:border-[#2c322e] rounded-[6px] hover:bg-[#efefeb] text-[#161917] dark:text-[#eceee9] inline-flex items-center gap-1"
-                          >
-                            <span>Edit</span>
-                          </button>
-                        } @else {
-                          <button
-                            type="button"
-                            (click)="selectedCourseDetails.set(course)"
-                            class="h-[30px] px-2.5 text-xs font-medium border border-[#dcdcd5] dark:border-[#2c322e] rounded-[6px] hover:bg-[#efefeb] text-[#161917] dark:text-[#eceee9]"
-                          >
-                            Details
-                          </button>
                         }
                       </div>
                     </td>
@@ -383,11 +359,18 @@ import { TermCourseAssignment } from '../models/crms.models';
               @let constRoom = crms.getRoomById(course.constantRoomId);
               @let relRoom = crms.getRoomById(course.relocatedRoomId);
               @let isRoomDown = constRoom && constRoom.availabilityState !== 'Operational';
-              <div class="p-3.5 space-y-3">
+              <div
+                role="button"
+                tabindex="0"
+                (click)="selectedCourseDetails.set(course)"
+                (keydown.enter)="selectedCourseDetails.set(course)"
+                (keydown.space)="selectedCourseDetails.set(course)"
+                class="p-3.5 space-y-3 cursor-pointer hover:bg-[#efefeb]/40 dark:hover:bg-[#202422]/40 transition-colors"
+              >
                 <div class="flex items-start justify-between gap-2">
                   <div>
                     <span class="font-mono font-bold text-xs text-[#14532d] dark:text-[#4ade80]">{{ course.courseCode }}</span>
-                    <h3 class="text-sm font-semibold text-[#161917] dark:text-[#eceee9] leading-snug">{{ course.courseTitle }}</h3>
+                    <h3 class="text-sm font-semibold text-[#161917] dark:text-[#eceee9] leading-snug line-clamp-2" [title]="course.courseTitle">{{ course.courseTitle }}</h3>
                     <p class="text-xs text-[#565b56] dark:text-[#9ca39e] mt-0.5">
                       {{ course.instructorName }} · <span class="font-mono tabular-nums">{{ course.enrolledStudents }}</span> students
                     </p>
@@ -401,8 +384,8 @@ import { TermCourseAssignment } from '../models/crms.models';
                 </div>
 
                 <div class="flex flex-wrap items-center justify-between gap-2 text-xs pt-2 border-t border-[#dcdcd5]/60 dark:border-[#2c322e]/60">
-                  <div class="font-mono text-[#565b56] dark:text-[#9ca39e]">
-                    {{ course.scheduleDays }} {{ course.startTime }}-{{ course.endTime }}
+                  <div class="text-[#565b56] dark:text-[#9ca39e]">
+                    {{ crms.formatCourseSchedule12Hour(course.scheduleDays, course.startTime, course.endTime) }}
                   </div>
 
                   <!-- Status with icon + neutral text -->
@@ -427,82 +410,67 @@ import { TermCourseAssignment } from '../models/crms.models';
                 </div>
 
                 <!-- Action Button: At least 44px min height for touch -->
-                <div class="pt-1">
-                  @if (isRoomDown && !course.relocatedRoomId) {
-                    <button
-                      type="button"
-                      (click)="openRelocationModal(course)"
-                      class="w-full min-h-[44px] px-3 text-xs font-semibold rounded-[6px] border border-red-700 dark:border-red-500 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 inline-flex items-center justify-center gap-1.5"
-                    >
-                      <mat-icon class="!w-4 !h-4 !text-[16px]">swap_horiz</mat-icon>
-                      <span>Reserve alternate room</span>
-                    </button>
-                  } @else if (course.relocatedRoomId) {
-                    <div class="grid grid-cols-2 gap-2">
+                @if (isRoomDown || course.relocatedRoomId) {
+                  <div class="pt-1">
+                    @if (isRoomDown && !course.relocatedRoomId) {
                       <button
                         type="button"
-                        (click)="openRelocationModal(course)"
-                        class="min-h-[44px] px-3 text-xs font-medium border border-[#dcdcd5] dark:border-[#2c322e] rounded-[6px] hover:bg-[#efefeb] text-[#161917] dark:text-[#eceee9] inline-flex items-center justify-center gap-1"
+                        (click)="openRelocationModal(course); $event.stopPropagation()"
+                        class="w-full min-h-[44px] px-3 text-xs font-medium rounded-[6px] border border-[#dcdcd5] dark:border-[#2c322e] text-[#161917] dark:text-[#eceee9] hover:bg-[#efefeb] dark:hover:bg-[#222624] inline-flex items-center justify-center gap-1.5"
                       >
-                        Change
+                        <mat-icon class="!w-4 !h-4 !text-[16px]">swap_horiz</mat-icon>
+                        <span>Find alternate room</span>
                       </button>
-                      <button
-                        type="button"
-                        (click)="crms.clearCourseRelocation(course.id)"
-                        class="min-h-[44px] px-3 text-xs font-medium border border-[#dcdcd5] dark:border-[#2c322e] rounded-[6px] hover:bg-[#efefeb] text-[#565b56] dark:text-[#9ca39e] inline-flex items-center justify-center"
-                      >
-                        Restore
-                      </button>
-                    </div>
-                  } @else if (crms.activeRole() === 'Admin') {
-                    <button
-                      type="button"
-                      (click)="openEditRoomDrawer(course)"
-                      class="w-full min-h-[44px] px-3 text-xs font-medium border border-[#dcdcd5] dark:border-[#2c322e] rounded-[6px] hover:bg-[#efefeb] text-[#161917] dark:text-[#eceee9] inline-flex items-center justify-center gap-1"
-                    >
-                      <span>Edit fixed room</span>
-                    </button>
-                  } @else {
-                    <button
-                      type="button"
-                      (click)="selectedCourseDetails.set(course)"
-                      class="w-full min-h-[44px] px-3 text-xs font-medium border border-[#dcdcd5] dark:border-[#2c322e] rounded-[6px] hover:bg-[#efefeb] text-[#161917] dark:text-[#eceee9] inline-flex items-center justify-center"
-                    >
-                      View class details
-                    </button>
-                  }
-                </div>
+                    } @else if (course.relocatedRoomId) {
+                      <div class="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          (click)="openRelocationModal(course); $event.stopPropagation()"
+                          class="min-h-[44px] px-3 text-xs font-medium border border-[#dcdcd5] dark:border-[#2c322e] rounded-[6px] hover:bg-[#efefeb] text-[#161917] dark:text-[#eceee9] inline-flex items-center justify-center gap-1"
+                        >
+                          Change
+                        </button>
+                        <button
+                          type="button"
+                          (click)="crms.clearCourseRelocation(course.id); $event.stopPropagation()"
+                          class="min-h-[44px] px-3 text-xs font-medium border border-[#dcdcd5] dark:border-[#2c322e] rounded-[6px] hover:bg-[#efefeb] text-[#565b56] dark:text-[#9ca39e] inline-flex items-center justify-center"
+                        >
+                          Restore
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
               </div>
             }
           </div>
 
-          <!-- Compact Clean Pagination Footer -->
-          <div class="p-3 border-t border-[#dcdcd5] dark:border-[#2c322e] flex items-center justify-between text-xs">
-            <span class="text-[#565b56] dark:text-[#9ca39e]">
-              Showing <span class="font-mono tabular-nums">{{ pagedCourses().length }}</span> of <span class="font-mono tabular-nums">{{ sortedAndFilteredCourses().length }}</span> courses
-            </span>
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                [disabled]="currentPage() <= 1"
-                (click)="currentPage.set(currentPage() - 1)"
-                class="px-2.5 py-1 rounded-[6px] border border-[#dcdcd5] dark:border-[#2c322e] text-[#161917] dark:text-[#eceee9] hover:bg-[#efefeb] disabled:opacity-40"
-              >
-                Previous
-              </button>
-              <span class="font-mono tabular-nums text-[#565b56] dark:text-[#9ca39e]">
-                Page {{ currentPage() }} / {{ totalPages() }}
-              </span>
-              <button
-                type="button"
-                [disabled]="currentPage() >= totalPages()"
-                (click)="currentPage.set(currentPage() + 1)"
-                class="px-2.5 py-1 rounded-[6px] border border-[#dcdcd5] dark:border-[#2c322e] text-[#161917] dark:text-[#eceee9] hover:bg-[#efefeb] disabled:opacity-40"
-              >
-                Next
-              </button>
+          <!-- Compact Clean Pagination Footer (Only when > 10 rows) -->
+          @if (sortedAndFilteredCourses().length > 10) {
+            <div class="p-3 border-t border-[#dcdcd5] dark:border-[#2c322e] flex items-center justify-end text-xs">
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  [disabled]="currentPage() <= 1"
+                  (click)="currentPage.set(currentPage() - 1)"
+                  class="px-2.5 py-1 rounded-[6px] border border-[#dcdcd5] dark:border-[#2c322e] text-[#161917] dark:text-[#eceee9] hover:bg-[#efefeb] disabled:opacity-40"
+                >
+                  Previous
+                </button>
+                <span class="font-mono tabular-nums text-[#565b56] dark:text-[#9ca39e]">
+                  Page {{ currentPage() }} / {{ totalPages() }}
+                </span>
+                <button
+                  type="button"
+                  [disabled]="currentPage() >= totalPages()"
+                  (click)="currentPage.set(currentPage() + 1)"
+                  class="px-2.5 py-1 rounded-[6px] border border-[#dcdcd5] dark:border-[#2c322e] text-[#161917] dark:text-[#eceee9] hover:bg-[#efefeb] disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
             </div>
-          </div>
+          }
         }
       </div>
 

@@ -64,6 +64,10 @@ export class CrmsService {
   readonly isLoadingView = signal<boolean>(false);
   readonly currentTerm = signal<string>('1st Semester AY 2026-2027');
 
+  setModule(id: ModuleId): void {
+    this.activeModule.set(id);
+  }
+
   // Global search & confirmation dialog state
   readonly globalSearchQuery = signal<string>('');
   readonly confirmDialog = signal<ConfirmDialogState>({
@@ -1293,37 +1297,137 @@ export class CrmsService {
     );
   }
 
-  batchAutoApproveEligible(): number {
-    let count = 0;
-    const fbUser = this.firebaseUser();
-    this.bookings.update((list) =>
-      list.map((b) => {
-        if (b.status === 'Pending Approval') {
-          count++;
-          const next = { ...b, status: 'Approved' as const };
-          if (fbUser) {
-            void this.saveBookingToFirestore(next, fbUser.uid, false);
-          }
-          return next;
-        }
-        return b;
-      })
-    );
-    if (count > 0) {
-      this.logAudit(
-        `Approved ${count} non-conflicting reservation requests in bulk`,
-        'Workflow Approvals',
-        `BATCH-${count}`
-      );
-      this.pushToast(
-        'Bulk approval completed',
-        `Approved ${count} pending conflict-free requests.`,
-        'success'
-      );
-    } else {
+  batchAutoApproveEligible(): void {
+    const pending = this.bookings().filter((b) => b.status === 'Pending Approval');
+    const count = pending.length;
+    if (count === 0) {
       this.pushToast('Approval queue clear', 'No pending requests require approval.', 'info');
+      return;
     }
-    return count;
+
+    this.requestConfirmation({
+      title: 'Approve all reservations?',
+      consequence: `You are about to approve ${count} pending reservation request${count > 1 ? 's' : ''}. You can undo this action immediately from the notification.`,
+      confirmLabel: `Approve ${count} booking${count > 1 ? 's' : ''}`,
+      severity: 'warning',
+      onConfirm: () => {
+        const previousBookings = [...this.bookings()];
+        const fbUser = this.firebaseUser();
+        this.bookings.update((list) =>
+          list.map((b) => {
+            if (b.status === 'Pending Approval') {
+              const next = { ...b, status: 'Approved' as const };
+              if (fbUser) {
+                void this.saveBookingToFirestore(next, fbUser.uid, false);
+              }
+              return next;
+            }
+            return b;
+          })
+        );
+        this.logAudit(
+          `Approved ${count} reservation requests in bulk`,
+          'Workflow Approvals',
+          `BATCH-${count}`
+        );
+        this.pushToast(
+          'Bulk approval completed',
+          `Approved ${count} pending reservation${count > 1 ? 's' : ''}.`,
+          'success',
+          {
+            label: 'Undo',
+            onUndo: () => {
+              this.bookings.set(previousBookings);
+              if (fbUser) {
+                for (const b of previousBookings) {
+                  void this.saveBookingToFirestore(b, fbUser.uid, false);
+                }
+              }
+              this.pushToast(
+                'Bulk approval undone',
+                `Restored previous states for ${count} reservations.`,
+                'info'
+              );
+            },
+          }
+        );
+      },
+    });
+  }
+
+  // --- FRIENDLY DATE/TIME & STRING FORMATTERS ---
+
+  format12HourTime(timeStr: string): string {
+    if (!timeStr) return '';
+    const parts = timeStr.trim().split(':');
+    if (parts.length < 2) return timeStr;
+    const hour = parseInt(parts[0], 10);
+    const minute = parts[1];
+    if (isNaN(hour)) return timeStr;
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12}:${minute} ${ampm}`;
+  }
+
+  formatTimeRange12Hour(timeRange: string): string {
+    if (!timeRange) return '';
+    const parts = timeRange.split(/[\s-]+/);
+    if (parts.length >= 2) {
+      const startParts = parts[0].split(':');
+      const endParts = parts[1].split(':');
+      if (startParts.length === 2 && endParts.length === 2) {
+        const startH = parseInt(startParts[0], 10);
+        const startM = startParts[1];
+        const endH = parseInt(endParts[0], 10);
+        const endM = endParts[1];
+        if (!isNaN(startH) && !isNaN(endH)) {
+          const startAmPm = startH >= 12 ? 'PM' : 'AM';
+          const endAmPm = endH >= 12 ? 'PM' : 'AM';
+          const start12H = startH % 12 === 0 ? 12 : startH % 12;
+          const end12H = endH % 12 === 0 ? 12 : endH % 12;
+          if (startAmPm === endAmPm) {
+            return `${start12H}:${startM}-${end12H}:${endM} ${endAmPm}`;
+          }
+          return `${start12H}:${startM} ${startAmPm}-${end12H}:${endM} ${endAmPm}`;
+        }
+      }
+    }
+    return timeRange;
+  }
+
+  formatFriendlyDate(dateStr: string): string {
+    if (!dateStr) return '';
+    const trimmed = dateStr.trim();
+    if (trimmed === '2026-11-05') return 'Today, Nov 5';
+    if (trimmed === '2026-11-06') return 'Tomorrow, Nov 6';
+    if (trimmed === '2026-11-07') return 'Nov 7';
+    if (trimmed === '2026-11-08') return 'Nov 8';
+    if (trimmed === '2026-11-09') return 'Nov 9';
+    if (trimmed === '2026-11-10') return 'Nov 10';
+    if (trimmed === '2026-11-12') return 'Nov 12';
+    const d = new Date(trimmed);
+    if (!isNaN(d.getTime())) {
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${monthNames[d.getMonth()]} ${d.getDate()}`;
+    }
+    return dateStr;
+  }
+
+  formatDateTime12Hour(dateStr: string, timeRange: string): string {
+    const friendlyDate = this.formatFriendlyDate(dateStr);
+    const friendlyTime = this.formatTimeRange12Hour(timeRange);
+    return `${friendlyDate}, ${friendlyTime}`;
+  }
+
+  formatCourseSchedule12Hour(days: string, startTime: string, endTime: string): string {
+    const range = this.formatTimeRange12Hour(`${startTime}-${endTime}`);
+    return `${days}, ${range}`;
+  }
+
+  formatSentenceCase(text: string): string {
+    if (!text) return '';
+    const lower = text.toLowerCase();
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
   }
 
   // --- IOT & DIGITAL TWIN CONTROLS ---
@@ -2582,7 +2686,7 @@ export class CrmsService {
         program: 'BS Computer Science',
         yearLevel: '3rd Year',
         rfidUid: 'RFID-9921-STU',
-        qrToken: 'BITS-QR-2026-0184-VERIFIED',
+        qrBadgeId: 'QR-0184',
         clearanceStatus: 'Cleared',
         eligibilityTier: 'Varsity & Lab Certified',
         outstandingBalancePhp: 0,
@@ -2596,7 +2700,7 @@ export class CrmsService {
         program: 'BS Computer Engineering',
         yearLevel: '4th Year',
         rfidUid: 'RFID-7734-STU',
-        qrToken: 'BITS-QR-2026-0412-HOLD',
+        qrBadgeId: 'QR-0412',
         clearanceStatus: 'Hold - Unpaid Fine',
         eligibilityTier: 'Lab Certified',
         outstandingBalancePhp: 475,
@@ -2610,7 +2714,7 @@ export class CrmsService {
         program: 'BS Chemical Engineering',
         yearLevel: '2nd Year',
         rfidUid: 'RFID-6102-STU',
-        qrToken: 'BITS-QR-2026-0891-STD',
+        qrBadgeId: 'QR-0891',
         clearanceStatus: 'Cleared',
         eligibilityTier: 'Standard',
         outstandingBalancePhp: 0,

@@ -41,7 +41,7 @@
     </div>
 
     <!-- Center: Global Search across Rooms, Courses, and Equipment (Hidden on mobile, uses full-width expander) -->
-    <div class="relative flex-1 max-w-md hidden sm:block">
+    <div class="relative flex-1 min-w-[240px] max-w-md hidden sm:block">
       <label for="global-crms-search" class="sr-only">Search rooms, courses, or equipment</label>
       <div class="relative flex items-center">
         <mat-icon class="!w-4 !h-4 !text-[16px] text-[#4B5A52] dark:text-[#A3B3A9] absolute left-3 pointer-events-none">
@@ -93,7 +93,7 @@
       }
     </div>
 
-    <!-- Right Controls: Mobile Search Toggle + Account + Single Primary CTA -->
+    <!-- Right Controls: Mobile Search Toggle + Account Menu (with Guide, Role Switcher, Appearance) + Standard Reserve CTA -->
     <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
       <!-- Mobile Search Icon Button (Expands full-width search on phone) -->
       <button
@@ -108,48 +108,14 @@
         </mat-icon>
       </button>
 
-      <!-- Desktop Text Link to Open CRMS Guide -->
-      <button
-        type="button"
-        (click)="crms.guideOpen.set(!crms.guideOpen())"
-        class="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#4B5A52] dark:text-[#A3B3A9] hover:text-[#14201A] dark:hover:text-[#EDF3EE] rounded-[6px] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] transition-colors"
-      >
-        <mat-icon class="!w-4 !h-4 !text-[16px]">help_outline</mat-icon>
-        <span>Guide</span>
-      </button>
-
-      <!-- Desktop Role Switcher: Subtle Tint for Active Role -->
-      <div
-        role="group"
-        aria-label="Active campus role"
-        class="hidden md:flex items-center p-0.5 rounded-[6px] bg-[#F7F9F8] dark:bg-[#121815] border border-[#DDE5E0] dark:border-[#29382F]"
-      >
-        @for (r of roles; track r) {
-          <button
-            type="button"
-            (click)="setRole(r)"
-            class="px-2.5 py-1 text-xs font-medium rounded-[5px] whitespace-nowrap transition-colors"
-            [class.bg-[#E8F3EC]]="crms.activeRole() === r && !crms.darkMode()"
-            [class.text-[#1B7F4B]]="crms.activeRole() === r && !crms.darkMode()"
-            [class.dark:bg-[#1C2E24]]="crms.activeRole() === r && crms.darkMode()"
-            [class.dark:text-[#34D399]]="crms.activeRole() === r && crms.darkMode()"
-            [class.font-semibold]="crms.activeRole() === r"
-            [class.text-[#4B5A52]]="crms.activeRole() !== r && !crms.darkMode()"
-            [class.dark:text-[#A3B3A9]]="crms.activeRole() !== r && crms.darkMode()"
-          >
-            {{ r }}
-          </button>
-        }
-      </div>
-
-      <!-- Account Menu Dropdown (Full name, role switcher on mobile, theme toggle on mobile, sign out) -->
+      <!-- Account Menu Dropdown (houses Profile, Preview as role switcher, Appearance theme toggle, and Guide) -->
       <div class="relative">
         <button
           type="button"
           (click)="accountMenuOpen.set(!accountMenuOpen())"
           [attr.aria-expanded]="accountMenuOpen()"
           aria-label="Campus account"
-          class="min-h-[44px] px-2 sm:px-2.5 py-1 text-xs font-medium rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] bg-white dark:bg-[#19221D] text-[#14201A] dark:text-[#EDF3EE] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] flex items-center gap-1.5"
+          class="h-9 px-2 sm:px-2.5 py-1 text-xs font-medium rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] bg-white dark:bg-[#19221D] text-[#14201A] dark:text-[#EDF3EE] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] flex items-center gap-1.5"
         >
           <mat-icon class="!w-4 !h-4 !text-[16px] text-[#1B7F4B]">account_circle</mat-icon>
           <span class="hidden sm:inline font-medium whitespace-nowrap">{{ crms.activePersona().name }}</span>
@@ -167,15 +133,15 @@
               <div class="text-[11px] font-mono text-[#4B5A52] dark:text-[#A3B3A9] pt-1">{{ crms.activePersona().badgeCode }}</div>
             </div>
 
-            <!-- Role Switcher on Narrow Screens (Mobile) -->
-            <div class="md:hidden pt-2 border-t border-[#DDE5E0] dark:border-[#29382F] space-y-1.5">
-              <span class="text-[11px] font-semibold text-[#4B5A52] dark:text-[#A3B3A9]">Preview role</span>
+            <!-- Role Switcher (Preview as) inside Account Menu -->
+            <div class="pt-2 border-t border-[#DDE5E0] dark:border-[#29382F] space-y-1.5">
+              <span class="text-[11px] font-semibold text-[#4B5A52] dark:text-[#A3B3A9]">Preview as</span>
               <div class="grid grid-cols-2 gap-1">
                 @for (r of roles; track r) {
                   <button
                     type="button"
                     (click)="setRole(r); accountMenuOpen.set(false)"
-                    class="min-h-[36px] px-2 py-1 text-xs font-medium rounded-[5px] border border-[#DDE5E0] dark:border-[#29382F] transition-colors"
+                    class="min-h-[34px] px-2 py-1 text-xs font-medium rounded-[5px] border border-[#DDE5E0] dark:border-[#29382F] transition-colors"
                     [class.bg-[#E8F3EC]]="crms.activeRole() === r && !crms.darkMode()"
                     [class.text-[#1B7F4B]]="crms.activeRole() === r && !crms.darkMode()"
                     [class.dark:bg-[#1C2E24]]="crms.activeRole() === r && crms.darkMode()"
@@ -188,13 +154,13 @@
               </div>
             </div>
 
-            <!-- Theme Toggle on Narrow Screens -->
-            <div class="sm:hidden pt-2 border-t border-[#DDE5E0] dark:border-[#29382F] flex items-center justify-between">
+            <!-- Appearance Theme Toggle inside Account Menu -->
+            <div class="pt-2 border-t border-[#DDE5E0] dark:border-[#29382F] flex items-center justify-between">
               <span class="text-[11px] text-[#4B5A52] dark:text-[#A3B3A9]">Appearance</span>
               <button
                 type="button"
                 (click)="crms.darkMode.set(!crms.darkMode())"
-                class="min-h-[36px] px-2.5 py-1 rounded-[5px] border border-[#DDE5E0] dark:border-[#29382F] text-xs font-medium flex items-center gap-1.5"
+                class="min-h-[34px] px-2.5 py-1 rounded-[5px] border border-[#DDE5E0] dark:border-[#29382F] text-xs font-medium flex items-center gap-1.5 hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24]"
               >
                 <mat-icon class="!w-3.5 !h-3.5 !text-[14px]">
                   {{ crms.darkMode() ? 'light_mode' : 'dark_mode' }}
@@ -203,23 +169,24 @@
               </button>
             </div>
 
-            <!-- Guide Link on Narrow Screens -->
-            <div class="lg:hidden pt-2 border-t border-[#DDE5E0] dark:border-[#29382F]">
+            <!-- CRMS Guide inside Account Menu -->
+            <div class="pt-2 border-t border-[#DDE5E0] dark:border-[#29382F]">
               <button
                 type="button"
                 (click)="crms.guideOpen.set(true); accountMenuOpen.set(false)"
-                class="w-full min-h-[36px] px-2.5 py-1 text-xs font-medium rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] text-[#14201A] dark:text-[#EDF3EE] flex items-center justify-center gap-1.5"
+                class="w-full min-h-[34px] px-2.5 py-1 text-xs font-medium rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] text-[#14201A] dark:text-[#EDF3EE] flex items-center justify-center gap-1.5"
               >
                 <mat-icon class="!w-3.5 !h-3.5 !text-[14px]">help_outline</mat-icon>
                 <span>Ask CRMS guide</span>
               </button>
             </div>
 
+            <!-- Sign Out -->
             <div class="pt-2 border-t border-[#DDE5E0] dark:border-[#29382F]">
               <button
                 type="button"
                 (click)="crms.signOutFirebase(); accountMenuOpen.set(false)"
-                class="w-full min-h-[36px] px-2.5 py-1.5 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] bg-white dark:bg-[#19221D] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] text-[#14201A] dark:text-[#EDF3EE] font-medium flex items-center justify-center gap-1.5 text-xs"
+                class="w-full min-h-[34px] px-2.5 py-1.5 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] bg-white dark:bg-[#19221D] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] text-[#14201A] dark:text-[#EDF3EE] font-medium flex items-center justify-center gap-1.5 text-xs"
               >
                 <mat-icon class="!w-3.5 !h-3.5 !text-[14px]">logout</mat-icon>
                 <span>Sign out</span>
@@ -229,23 +196,11 @@
         }
       </div>
 
-      <!-- Desktop Theme Toggle -->
-      <button
-        type="button"
-        (click)="crms.darkMode.set(!crms.darkMode())"
-        [attr.aria-label]="crms.darkMode() ? 'Switch to light theme' : 'Switch to dark theme'"
-        class="hidden sm:inline-flex min-h-[44px] min-w-[44px] p-2 rounded-[6px] border border-[#DDE5E0] dark:border-[#29382F] bg-white dark:bg-[#19221D] text-[#14201A] dark:text-[#EDF3EE] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] items-center justify-center"
-      >
-        <mat-icon class="!w-4 !h-4 !text-[16px]">
-          {{ crms.darkMode() ? 'light_mode' : 'dark_mode' }}
-        </mat-icon>
-      </button>
-
-      <!-- The Single Primary Green Action per Screen: Full on sm+, Compact 44x44 on mobile -->
+      <!-- The Single Primary Green Action per Screen: Standard Button Size -->
       <button
         type="button"
         (click)="openBookingWizard()"
-        class="min-h-[44px] px-3 sm:px-3.5 py-2 text-xs font-semibold text-white bg-[#1B7F4B] hover:bg-[#16683D] rounded-[6px] whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+        class="h-9 px-3.5 py-1.5 text-xs font-semibold text-white bg-[#1B7F4B] hover:bg-[#16683D] rounded-[6px] whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5 shadow-xs transition-colors"
       >
         <mat-icon class="!w-4 !h-4 !text-[16px]">add</mat-icon>
         <span class="hidden sm:inline">Reserve room</span>
@@ -373,12 +328,12 @@
 
               @if (!crms.sidebarCollapsed()) {
                 @if (item.id === 'rooms-courses' && crms.disruptedTermCourses().length > 0) {
-                  <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[4px] bg-[#FDECEC] text-[#B91C1C] shrink-0">
-                    {{ crms.disruptedTermCourses().length }} offline
+                  <span class="font-sans text-[11px] font-semibold px-2 py-0.5 rounded-[4px] bg-[#FDECEC] dark:bg-[#3D1414] text-[#B91C1C] dark:text-[#F87171] border border-[#FCA5A5]/30 shrink-0">
+                    {{ crms.disruptedTermCourses().length }}
                   </span>
                 }
                 @if (item.id === 'operations' && crms.pendingApprovalsCount() > 0) {
-                  <span class="font-mono text-[10px] font-semibold px-1.5 py-0.5 rounded-[4px] bg-[#FEF3E2] text-[#B45309] shrink-0">
+                  <span class="font-sans text-[11px] font-semibold px-2 py-0.5 rounded-[4px] bg-[#F7F9F8] dark:bg-[#121815] text-[#4B5A52] dark:text-[#A3B3A9] border border-[#DDE5E0] dark:border-[#29382F] shrink-0">
                     {{ crms.pendingApprovalsCount() }}
                   </span>
                 }
@@ -462,7 +417,7 @@
                     Hello, {{ userFirstName() }}
                   </h1>
                   <p class="text-xs text-[#4B5A52] dark:text-[#A3B3A9] mt-0.5">
-                    {{ crms.activePersona().title }} · {{ crms.activePersona().department }}
+                    {{ crms.activePersona().title }}
                   </p>
                 </div>
               </div>
@@ -947,63 +902,48 @@
                         </div>
                       </section>
 
-                      <!-- Small Floorplan Preview -->
-                      <section aria-label="Campus floorplan preview" class="bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] rounded-[8px] p-5 space-y-3">
+                      <!-- Readable Floorplan Summary Card -->
+                      <button
+                        type="button"
+                        (click)="setModule('digital-twin')"
+                        class="w-full text-left p-5 rounded-[8px] bg-white dark:bg-[#19221D] border border-[#DDE5E0] dark:border-[#29382F] hover:border-[#1B7F4B] hover:bg-[#F7F9F8] dark:hover:bg-[#1C2E24] cursor-pointer transition-colors space-y-3 group"
+                      >
                         <div class="flex items-center justify-between">
-                          <div class="flex items-center gap-1.5">
-                            <mat-icon class="!w-4 !h-4 !text-[16px] text-[#1B7F4B]">map</mat-icon>
-                            <span class="text-xs font-medium text-[#14201A] dark:text-[#EDF3EE]">Rizal Hall floorplan</span>
+                          <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-[6px] bg-[#E8F3EC] dark:bg-[#1C2E24] text-[#1B7F4B] flex items-center justify-center">
+                              <mat-icon class="!w-4 !h-4 !text-[18px]">map</mat-icon>
+                            </div>
+                            <span class="text-xs font-semibold text-[#14201A] dark:text-[#EDF3EE] group-hover:text-[#1B7F4B]">
+                              Campus Floorplan
+                            </span>
                           </div>
-                          <button
-                            type="button"
-                            (click)="setModule('digital-twin')"
-                            class="text-xs font-semibold text-[#1B7F4B] hover:underline"
-                          >
+                          <span class="text-xs text-[#1B7F4B] font-semibold flex items-center gap-0.5">
                             Full map
-                          </button>
+                            <mat-icon class="!w-3.5 !h-3.5 !text-[14px]">arrow_forward</mat-icon>
+                          </span>
                         </div>
 
-                        <!-- Mini Floorplan SVG Diagram -->
-                        <button
-                          type="button"
-                          (click)="setModule('digital-twin')"
-                          class="w-full h-36 rounded-[6px] bg-[#F7F9F8] dark:bg-[#121815] border border-[#DDE5E0] dark:border-[#29382F] p-2 flex flex-col justify-between cursor-pointer hover:border-[#1B7F4B] transition-colors text-left"
-                        >
-                          <svg viewBox="0 0 280 120" class="w-full h-full">
-                            <!-- Hallway -->
-                            <rect x="10" y="50" width="260" height="20" fill="#E8F3EC" stroke="#DDE5E0" stroke-width="1" rx="2" />
-                            <text x="140" y="64" font-size="8" fill="#4B5A52" text-anchor="middle" font-family="Public Sans, sans-serif">Central Corridor (Floor 1)</text>
-
-                            <!-- Rm 101: Ready -->
-                            <rect x="15" y="10" width="80" height="35" fill="#FFFFFF" stroke="#1B7F4B" stroke-width="1.5" rx="3" />
-                            <text x="55" y="26" font-size="9" font-weight="bold" fill="#14201A" text-anchor="middle" font-family="JetBrains Mono, monospace">Rm 101</text>
-                            <text x="55" y="38" font-size="7" fill="#1B7F4B" text-anchor="middle" font-family="Public Sans, sans-serif">Ready (44)</text>
-
-                            <!-- Rm 102: Ready -->
-                            <rect x="105" y="10" width="80" height="35" fill="#FFFFFF" stroke="#1B7F4B" stroke-width="1.5" rx="3" />
-                            <text x="145" y="26" font-size="9" font-weight="bold" fill="#14201A" text-anchor="middle" font-family="JetBrains Mono, monospace">Rm 102</text>
-                            <text x="145" y="38" font-size="7" fill="#1B7F4B" text-anchor="middle" font-family="Public Sans, sans-serif">Ready (40)</text>
-
-                            <!-- Rm 204: Maintenance -->
-                            <rect x="195" y="10" width="75" height="35" fill="#FDECEC" stroke="#B91C1C" stroke-width="1.5" rx="3" />
-                            <text x="232" y="26" font-size="9" font-weight="bold" fill="#14201A" text-anchor="middle" font-family="JetBrains Mono, monospace">Rm 204</text>
-                            <text x="232" y="38" font-size="7" fill="#B91C1C" text-anchor="middle" font-family="Public Sans, sans-serif">Offline</text>
-
-                            <!-- Discussion Pods -->
-                            <rect x="15" y="75" width="125" height="35" fill="#FFFFFF" stroke="#DDE5E0" stroke-width="1" rx="3" />
-                            <text x="77" y="93" font-size="8" font-weight="bold" fill="#14201A" text-anchor="middle" font-family="Public Sans, sans-serif">Discussion Pods A-C</text>
-                            <text x="77" y="103" font-size="7" fill="#4B5A52" text-anchor="middle" font-family="Public Sans, sans-serif">3 Available</text>
-
-                            <!-- AV Lab -->
-                            <rect x="150" y="75" width="120" height="35" fill="#FFFFFF" stroke="#DDE5E0" stroke-width="1" rx="3" />
-                            <text x="210" y="93" font-size="8" font-weight="bold" fill="#14201A" text-anchor="middle" font-family="Public Sans, sans-serif">Microprocessors Lab</text>
-                            <text x="210" y="103" font-size="7" fill="#4B5A52" text-anchor="middle" font-family="Public Sans, sans-serif">In session</text>
-                          </svg>
-                          <div class="text-[10px] text-center text-[#4B5A52] dark:text-[#A3B3A9] w-full">
-                            Click to open interactive 2D floorplan
+                        <div>
+                          <div class="text-base font-bold text-[#14201A] dark:text-[#EDF3EE]">
+                            Rooms free now: 3 of 5
                           </div>
-                        </button>
-                      </section>
+                          <p class="text-xs text-[#4B5A52] dark:text-[#A3B3A9] mt-0.5">
+                            Rizal Academic Hall & Science Center
+                          </p>
+                        </div>
+
+                        <div class="pt-2 border-t border-[#DDE5E0] dark:border-[#29382F] space-y-1.5 text-xs">
+                          <div class="text-[11px] font-semibold text-[#4B5A52] dark:text-[#A3B3A9]">Offline rooms:</div>
+                          <div class="flex items-center gap-2 p-1.5 rounded-[5px] bg-[#FDECEC] dark:bg-[#3D1414] text-[#B91C1C] dark:text-[#F87171] border border-[#FCA5A5]/30">
+                            <mat-icon class="!w-3.5 !h-3.5 !text-[14px] shrink-0">build</mat-icon>
+                            <span class="truncate">Rm 204, Rizal Hall · Under maintenance</span>
+                          </div>
+                          <div class="flex items-center gap-2 p-1.5 rounded-[5px] bg-[#FDECEC] dark:bg-[#3D1414] text-[#B91C1C] dark:text-[#F87171] border border-[#FCA5A5]/30">
+                            <mat-icon class="!w-3.5 !h-3.5 !text-[14px] shrink-0">warning</mat-icon>
+                            <span class="truncate">Rm 202, Science Bldg · Scheduled calibration</span>
+                          </div>
+                        </div>
+                      </button>
                     </div>
                   </div>
                 }

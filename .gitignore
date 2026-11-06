@@ -1,8 +1,9 @@
 # See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
-# Env variables
+# Env variables and credentials
 .env*
 !.env.example
+firebase-applet-config.json
 
 # Compiled output
 /dist

@@ -113,19 +113,19 @@ import { BookingRecord, EcosystemIntegration } from '../models/crms.models';
                         (click)="selectedBookingDetails.set(b)"
                         class="h-14 hover:bg-[#efefeb]/60 dark:hover:bg-[#202422]/60 transition-colors cursor-pointer"
                       >
-                        <!-- Col 1: Request -->
+                        <!-- Col 1: Request (Wrap to 2 lines with tooltip, requester name only) -->
                         <td class="py-2.5 px-4 align-middle">
-                          <div class="font-semibold text-[#161917] dark:text-[#eceee9] truncate max-w-[260px]">
+                          <div class="font-semibold text-[#161917] dark:text-[#eceee9] line-clamp-2 max-w-[280px]" [title]="b.title">
                             {{ b.title }}
                           </div>
                           <div class="text-[11px] text-[#565b56] dark:text-[#9ca39e] mt-0.5">
-                            {{ b.requesterName }} ({{ b.requesterRole }}) · {{ b.department }}
+                            {{ b.requesterName }}
                           </div>
                         </td>
 
-                        <!-- Col 2: Status (Neutral text with colored icon only) -->
+                        <!-- Col 2: Status (Sentence case in sans font) -->
                         <td class="py-2.5 px-4 align-middle whitespace-nowrap">
-                          <span class="inline-flex items-center gap-1.5 text-xs text-[#14201A] dark:text-[#EDF3EE]">
+                          <span class="inline-flex items-center gap-1.5 text-xs font-sans text-[#14201A] dark:text-[#EDF3EE]">
                             <mat-icon
                               class="!w-4 !h-4 !text-[16px]"
                               [class.text-[#1B7F4B]]="b.status === 'Approved'"
@@ -134,21 +134,21 @@ import { BookingRecord, EcosystemIntegration } from '../models/crms.models';
                             >
                               {{ b.status === 'Approved' ? 'check_circle' : b.status === 'Rejected' ? 'cancel' : 'schedule' }}
                             </mat-icon>
-                            <span>{{ b.status }}</span>
+                            <span>{{ crms.formatSentenceCase(b.status) }}</span>
                           </span>
                         </td>
 
-                        <!-- Col 3: When -->
+                        <!-- Col 3: When (Friendly 12-hour date and time) -->
                         <td class="py-2.5 px-4 align-middle">
-                          <div class="font-mono text-[#161917] dark:text-[#eceee9]">
-                            {{ b.date }} · {{ b.startTime }}-{{ b.endTime }}
+                          <div class="font-sans text-[#161917] dark:text-[#eceee9]">
+                            {{ crms.formatDateTime12Hour(b.date, b.startTime + '-' + b.endTime) }}
                           </div>
                           <div class="text-[11px] text-[#565b56] dark:text-[#9ca39e]">
                             {{ b.targetName }}
                           </div>
                         </td>
 
-                        <!-- Col 4: Action -->
+                        <!-- Col 4: Action (Approve and Reject only on pending rows) -->
                         <td class="py-2.5 px-4 align-middle text-right whitespace-nowrap" (click)="$event.stopPropagation()">
                           <div class="inline-flex items-center justify-end gap-1.5">
                             @if (b.status === 'Pending Approval' && crms.activeRole() !== 'Student') {
@@ -167,14 +167,6 @@ import { BookingRecord, EcosystemIntegration } from '../models/crms.models';
                               >
                                 <span>Reject</span>
                               </button>
-                            } @else {
-                              <button
-                                type="button"
-                                (click)="selectedBookingDetails.set(b)"
-                                class="h-[30px] px-2.5 text-xs font-medium border border-[#dcdcd5] dark:border-[#2c322e] rounded-[6px] hover:bg-[#efefeb] text-[#161917] dark:text-[#eceee9]"
-                              >
-                                Details
-                              </button>
                             }
                           </div>
                         </td>
@@ -187,15 +179,22 @@ import { BookingRecord, EcosystemIntegration } from '../models/crms.models';
               <!-- Mobile Stacked Card List (Zero Horizontal Scroll on Phones & Small Tablets) -->
               <div class="block md:hidden divide-y divide-[#dcdcd5] dark:divide-[#2c322e]">
                 @for (b of filteredBookings(); track b.id) {
-                  <div class="p-3.5 space-y-3">
+                  <div
+                    role="button"
+                    tabindex="0"
+                    (click)="selectedBookingDetails.set(b)"
+                    (keydown.enter)="selectedBookingDetails.set(b)"
+                    (keydown.space)="selectedBookingDetails.set(b)"
+                    class="p-3.5 space-y-3 cursor-pointer hover:bg-[#efefeb]/40 dark:hover:bg-[#202422]/40 transition-colors"
+                  >
                     <div class="flex items-start justify-between gap-2">
                       <div>
-                        <h3 class="text-sm font-semibold text-[#161917] dark:text-[#eceee9] leading-snug">{{ b.title }}</h3>
+                        <h3 class="text-sm font-semibold text-[#161917] dark:text-[#eceee9] leading-snug line-clamp-2" [title]="b.title">{{ b.title }}</h3>
                         <p class="text-xs text-[#565b56] dark:text-[#9ca39e] mt-0.5">
-                          {{ b.requesterName }} ({{ b.requesterRole }}) · {{ b.department }}
+                          {{ b.requesterName }}
                         </p>
                       </div>
-                      <span class="inline-flex items-center gap-1 text-xs shrink-0 text-[#14201A] dark:text-[#EDF3EE]">
+                      <span class="inline-flex items-center gap-1 text-xs shrink-0 font-sans text-[#14201A] dark:text-[#EDF3EE]">
                         <mat-icon
                           class="!w-4 !h-4 !text-[16px]"
                           [class.text-[#1B7F4B]]="b.status === 'Approved'"
@@ -204,25 +203,25 @@ import { BookingRecord, EcosystemIntegration } from '../models/crms.models';
                         >
                           {{ b.status === 'Approved' ? 'check_circle' : b.status === 'Rejected' ? 'cancel' : 'schedule' }}
                         </mat-icon>
-                        <span class="font-medium">{{ b.status }}</span>
+                        <span class="font-medium">{{ crms.formatSentenceCase(b.status) }}</span>
                       </span>
                     </div>
 
                     <div class="flex flex-wrap items-center justify-between gap-2 text-xs pt-2 border-t border-[#dcdcd5]/60 dark:border-[#2c322e]/60">
-                      <div class="font-mono text-[#565b56] dark:text-[#9ca39e]">
-                        {{ b.date }} · {{ b.startTime }}-{{ b.endTime }}
+                      <div class="font-sans text-[#565b56] dark:text-[#9ca39e]">
+                        {{ crms.formatDateTime12Hour(b.date, b.startTime + '-' + b.endTime) }}
                       </div>
                       <div class="font-medium text-[#161917] dark:text-[#eceee9]">
                         {{ b.targetName }}
                       </div>
                     </div>
 
-                    <!-- Actions (44px min height) -->
-                    <div class="pt-1 flex gap-2">
-                      @if (b.status === 'Pending Approval' && crms.activeRole() !== 'Student') {
+                    <!-- Actions (Approve and Reject only on pending rows) -->
+                    @if (b.status === 'Pending Approval' && crms.activeRole() !== 'Student') {
+                      <div class="pt-1 flex gap-2">
                         <button
                           type="button"
-                          (click)="crms.updateBookingStatus(b.id, 'Approved')"
+                          (click)="crms.updateBookingStatus(b.id, 'Approved'); $event.stopPropagation()"
                           class="flex-1 min-h-[44px] px-3 text-xs font-semibold rounded-[6px] border border-[#dcdcd5] dark:border-[#2c322e] bg-[#fbfbfa] dark:bg-[#181b19] hover:bg-[#efefeb] text-[#161917] dark:text-[#eceee9] inline-flex items-center justify-center gap-1.5"
                         >
                           <mat-icon class="!w-4 !h-4 !text-[16px] text-[#1B7F4B]">check</mat-icon>
@@ -230,21 +229,13 @@ import { BookingRecord, EcosystemIntegration } from '../models/crms.models';
                         </button>
                         <button
                           type="button"
-                          (click)="confirmRejectBooking(b)"
+                          (click)="confirmRejectBooking(b); $event.stopPropagation()"
                           class="min-h-[44px] px-4 text-xs font-medium rounded-[6px] border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 inline-flex items-center justify-center"
                         >
                           <span>Reject</span>
                         </button>
-                      } @else {
-                        <button
-                          type="button"
-                          (click)="selectedBookingDetails.set(b)"
-                          class="w-full min-h-[44px] px-3 text-xs font-medium border border-[#dcdcd5] dark:border-[#2c322e] rounded-[6px] hover:bg-[#efefeb] text-[#161917] dark:text-[#eceee9] inline-flex items-center justify-center"
-                        >
-                          View reservation details
-                        </button>
-                      }
-                    </div>
+                      </div>
+                    }
                   </div>
                 }
               </div>
@@ -271,7 +262,7 @@ import { BookingRecord, EcosystemIntegration } from '../models/crms.models';
                     <div class="font-mono text-[11px] text-[#565b56] dark:text-[#9ca39e]">
                       {{ wo.ticketNo }} · Priority: {{ wo.priority }}
                     </div>
-                    <p class="font-semibold text-[#161917] dark:text-[#eceee9] mt-0.5">
+                    <p class="font-semibold text-[#161917] dark:text-[#eceee9] mt-0.5 line-clamp-2" [title]="wo.issueType + ' · ' + wo.targetName">
                       {{ wo.issueType }} · {{ wo.targetName }}
                     </p>
                     <p class="text-[#565b56] dark:text-[#9ca39e]">
@@ -280,14 +271,14 @@ import { BookingRecord, EcosystemIntegration } from '../models/crms.models';
                   </div>
                   <div class="flex items-center gap-2 shrink-0">
                     <span
-                      class="font-mono font-medium flex items-center gap-1"
+                      class="font-sans font-medium text-xs flex items-center gap-1"
                       [class.text-emerald-700]="wo.status === 'Resolved'"
                       [class.text-amber-800]="wo.status !== 'Resolved'"
                     >
                       <mat-icon class="!w-3.5 !h-3.5 !text-[14px]">
                         {{ wo.status === 'Resolved' ? 'check_circle' : 'build' }}
                       </mat-icon>
-                      <span>{{ wo.status }}</span>
+                      <span>{{ crms.formatSentenceCase(wo.status) }}</span>
                     </span>
                     @if (wo.status !== 'Resolved') {
                       <button
@@ -701,13 +692,13 @@ import { BookingRecord, EcosystemIntegration } from '../models/crms.models';
                             <div class="text-[11px] text-[#565b56] dark:text-[#9ca39e]">{{ wo.targetName }}</div>
                           </td>
                           <td class="py-3 px-3 font-sans">
-                            <div class="font-medium text-[#161917] dark:text-[#eceee9]">{{ wo.issueType }}</div>
+                            <div class="font-medium text-[#161917] dark:text-[#eceee9] line-clamp-2" [title]="wo.issueType">{{ wo.issueType }}</div>
                             <div class="text-[10px]" [class.text-red-700]="wo.priority === 'Critical'" [class.text-amber-700]="wo.priority === 'High'" [class.text-[#565b56]]="wo.priority === 'Routine'">
                               Priority: {{ wo.priority }}
                             </div>
                           </td>
                           <td class="py-3 px-3 font-sans">
-                            <span class="px-2 py-0.5 rounded-[4px] text-[11px] font-medium"
+                            <span class="px-2 py-0.5 rounded-[4px] text-[11px] font-sans font-medium"
                               [class.bg-emerald-100]="wo.status === 'Resolved'"
                               [class.text-emerald-800]="wo.status === 'Resolved'"
                               [class.bg-amber-100]="wo.status === 'In Progress'"
@@ -715,7 +706,7 @@ import { BookingRecord, EcosystemIntegration } from '../models/crms.models';
                               [class.bg-red-100]="wo.status === 'Open'"
                               [class.text-red-800]="wo.status === 'Open'"
                             >
-                              {{ wo.status }}
+                              {{ crms.formatSentenceCase(wo.status) }}
                             </span>
                           </td>
                           <td class="py-3 px-4 text-right font-bold text-[#14532d] dark:text-[#4ade80]">
@@ -733,13 +724,13 @@ import { BookingRecord, EcosystemIntegration } from '../models/crms.models';
                       <div class="flex items-start justify-between gap-2">
                         <div>
                           <span class="font-mono font-semibold text-[#161917] dark:text-[#eceee9]">{{ wo.ticketNo }}</span>
-                          <div class="font-medium text-[#161917] dark:text-[#eceee9]">{{ wo.issueType }} · {{ wo.targetName }}</div>
+                          <div class="font-medium text-[#161917] dark:text-[#eceee9] line-clamp-2" [title]="wo.issueType + ' · ' + wo.targetName">{{ wo.issueType }} · {{ wo.targetName }}</div>
                         </div>
                         <span class="font-mono font-bold text-[#14532d] dark:text-[#4ade80]">₱{{ wo.estimatedCostPhp | number }}</span>
                       </div>
                       <div class="flex items-center justify-between pt-1">
                         <span class="text-[11px] text-[#565b56] dark:text-[#9ca39e]">Priority: {{ wo.priority }}</span>
-                        <span class="font-medium text-[#161917] dark:text-[#eceee9]">{{ wo.status }}</span>
+                        <span class="font-sans font-medium text-[#161917] dark:text-[#eceee9]">{{ crms.formatSentenceCase(wo.status) }}</span>
                       </div>
                     </div>
                   }
